@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <meta charset="utf-8">
+        <title>Connecting to Github's OAuth2 API with Tornado</title>
+        <link rel="stylesheet" href="/theme/css/main.css">
+                
+        <!--[if IE]>
+            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+</head>
+
+<body id="index" class="home">
+        <header id="banner" class="body">
+                <h1><a href="/">casbon.me </a></h1>
+                <nav><ul>
+                                                                                    <li ><a href="/category/pvr.html">PVR</a></li>
+                                    <li class="active"><a href="/category/python.html">Python</a></li>
+                                                </ul></nav>
+        </header><!-- /#banner -->
+        <section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/connecting-to-githubs-oauth2-api-with-tornado.html" rel="bookmark"
+           title="Permalink to Connecting to Github's OAuth2 API with Tornado">Connecting to Github's OAuth2 API with Tornado</a></h1>
+          </header>
+
+    <div class="entry-content">
+      <footer class="post-info">
+        <abbr class="published" title="2012-06-03T10:20:00">
+                Sun 03 June 2012
+        </abbr>
+
+                <address class="vcard author">
+                By <a class="url fn" href="/author/james-casbon.html">James Casbon</a>
+        </address>
+        <p>In <a href="/category/python.html">Python</a>. </p>
+<p>tags: <a href="/tag/python.html">python</a><a href="/tag/tornado.html">tornado</a></p>
+</footer><!-- /.post-info -->      <p>Github has a nice OAuth2 API that we can use to manipulate git repos, gists,
+etc.  I went through the process of implementing a Tornado based client for the
+API.  This could allow a github backed application.  Note here, we are still
+performing server side operations, so the client is relatively simple.  An
+alternative approach is to do the github interaction in the browser.  If you are
+interested in that, check this library.</p>
+<p>Tornado takes a callback based approach, and we need to code the entire OAuth2
+dance in this way.  There is an base class, tornado.auth.OAuth2Mixin, which can
+perform a very small subset of the protocol.  The steps we need to log in a
+user:</p>
+<ol>
+<li>
+<p>Get an authorization code using authorize_redirect method from the base class.
+This presents the user with a 'do you want to authorize this app dialog in
+github'.  Github then posts back to our app with the code</p>
+</li>
+<li>
+<p>Get a user access token by exchanging the code for an access token.  This is
+done via a simple GET.  This means the user is now logged in.</p>
+</li>
+<li>
+<p>Get the user details by asking the API for the user information</p>
+</li>
+<li>
+<p>Parse the user information and store the relevant details in a session/whatever</p>
+</li>
+</ol>
+<p>Here is a base class that takes care of many of these details.
+get_authenticated_user needs an authorization code, which it uses to get an
+access token.  If it succeeds, it calls _on_access_code, which makes an API
+request to /user.  This is then returned to the callback set by the original
+caller of get_authenticated_user.  It also provides github_request, which makes
+an API call and hands the data to _parse_response which in turn hands it to the
+callback specified by the caller.</p>
+<p>https://gist.github.com/2962341.js?file=github.py</p>
+<p>We can use this, as below, to create handlers to login a user - and in this case
+store the credentials in a secure cookie - or to make an API call for a logged
+in user:</p>
+<p>https://gist.github.com/2962341.js?file=example.py</p>
+    </div><!-- /.entry-content -->
+    
+  </article>
+</section>
+        <section id="extras" class="body">
+                        <div class="blogroll">
+                        <h2>blogroll</h2>
+                        <ul>
+                                                    <li><a href="http://getpelican.com/">Pelican</a></li>
+                                                    <li><a href="http://python.org/">Python.org</a></li>
+                                                    <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
+                                                </ul>
+                </div><!-- /.blogroll -->
+                                <div class="social">
+                        <h2>social</h2>
+                        <ul>
+                            <li><a href="/None" type="application/atom+xml" rel="alternate">atom feed</a></li>
+                            
+                                                    <li><a href="https://twitter.com/casualbon">Follow me on twitter</a></li>
+                                                    <li><a href="https://github.com/jamescasbon">Fork me on github</a></li>
+                                                </ul>
+                </div><!-- /.social -->
+                </section><!-- /#extras -->
+
+        <footer id="contentinfo" class="body">
+                <address id="about" class="vcard body">
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+                </address><!-- /#about -->
+
+                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
+        </footer><!-- /#contentinfo -->
+
+</body>
+</html>

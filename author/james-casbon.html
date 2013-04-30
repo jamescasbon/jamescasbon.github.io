@@ -237,227 +237,332 @@ With plpython you could generate the index in the database without altering your
                     <div class="clear"></div>
                 </div>
 
-                <h4 class="date">Jun  3,  2012</h4>
+                <h4 class="date">Apr 18,  2012</h4>
                 <div class="post">
                     <h2 class="title">
-                        <a href="http://casbon.me/connecting-to-githubs-oauth2-api-with-tornado.html" rel="bookmark" title="Permanent Link to &quot;Connecting to Github's OAuth2 API with Tornado&quot;">Connecting to Github's OAuth2 API with Tornado</a>
+                        <a href="http://casbon.me/backbonejs-handlers-for-tornado-and-mongodb.html" rel="bookmark" title="Permanent Link to &quot;Backbone.js handlers for Tornado and MongoDB&quot;">Backbone.js handlers for Tornado and MongoDB</a>
                     </h2>
                     
-                    <p>Github has a nice OAuth2 API that we can use to manipulate git repos, gists,
-etc.  I went through the process of implementing a Tornado based client for the
-API.  This could allow a github backed application.  Note here, we are still
-performing server side operations, so the client is relatively simple.  An
-alternative approach is to do the github interaction in the browser.  If you are
-interested in that, check this library.</p>
-<p>Tornado takes a callback based approach, and we need to code the entire OAuth2
-dance in this way.  There is an base class, tornado.auth.OAuth2Mixin, which can
-perform a very small subset of the protocol.  The steps we need to log in a
-user:</p>
-<ol>
-<li>
-<p>Get an authorization code using authorize_redirect method from the base class.
-This presents the user with a 'do you want to authorize this app dialog in
-github'.  Github then posts back to our app with the code</p>
-</li>
-<li>
-<p>Get a user access token by exchanging the code for an access token.  This is
-done via a simple GET.  This means the user is now logged in.</p>
-</li>
-<li>
-<p>Get the user details by asking the API for the user information</p>
-</li>
-<li>
-<p>Parse the user information and store the relevant details in a session/whatever</p>
-</li>
-</ol>
-<p>Here is a base class that takes care of many of these details.
-get_authenticated_user needs an authorization code, which it uses to get an
-access token.  If it succeeds, it calls _on_access_code, which makes an API
-request to /user.  This is then returned to the callback set by the original
-caller of get_authenticated_user.  It also provides github_request, which makes
-an API call and hands the data to _parse_response which in turn hands it to the
-callback specified by the caller.</p>
-<div class="highlight"><pre><span class="kn">import</span> <span class="nn">urllib</span>
-<span class="kn">import</span> <span class="nn">tornado.ioloop</span>
+                    <div class="highlight"><pre><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Backbone.js handler and mongodb based handler for Tornado.</span>
+
+<span class="sd">`BackboneHandler` handles the sync protocol for Backbone.js.  Inherit</span>
+<span class="sd">from the class and implement the model methods:</span>
+<span class="sd">    * create_model</span>
+<span class="sd">    * update_model</span>
+<span class="sd">    * get_model</span>
+<span class="sd">    * delete_model</span>
+<span class="sd">    * get_collection</span>
+<span class="sd">Optionally implement is_get_collection for complex url routing schemes.</span>
+
+<span class="sd">`MongoBackboneHandler` implements these methods using a mongodb database.</span>
+<span class="sd">Inherit and implement the:</span>
+<span class="sd">    * model_query</span>
+<span class="sd">    * collection_query</span>
+<span class="sd">    * is_get_collection</span>
+<span class="sd">methods to map url arguments into database queries.  Also optionally implement:</span>
+<span class="sd">    * before_create</span>
+<span class="sd">    * before_update</span>
+<span class="sd">    * validate</span>
+<span class="sd">To validate and insert data into a document before a create/update</span>
+
+<span class="sd">TODO: async version</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
 <span class="kn">import</span> <span class="nn">tornado.web</span>
-<span class="kn">import</span> <span class="nn">tornado.auth</span>
-<span class="kn">import</span> <span class="nn">tornado.httpclient</span>
-<span class="kn">import</span> <span class="nn">tornado.escape</span>
-<span class="kn">import</span> <span class="nn">tornado.httputil</span>
-<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">tornado.httpserver</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+<span class="kn">from</span> <span class="nn">pymongo.objectid</span> <span class="kn">import</span> <span class="n">ObjectId</span>
 
 
-<span class="k">class</span> <span class="nc">GithubMixin</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">OAuth2Mixin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Github OAuth Mixin, based on FacebookGraphMixin</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">BackboneHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span>
 
-    <span class="n">_OAUTH_AUTHORIZE_URL</span> <span class="o">=</span> <span class="s">&#39;https://github.com/login/oauth/authorize&#39;</span>
-    <span class="n">_OAUTH_ACCESS_TOKEN_URL</span> <span class="o">=</span> <span class="s">&#39;https://github.com/login/oauth/access_token&#39;</span>
-    <span class="n">_API_URL</span> <span class="o">=</span> <span class="s">&#39;https://api.github.com&#39;</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="n">auth</span>
 
-    <span class="k">def</span> <span class="nf">get_authenticated_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">redirect_uri</span><span class="p">,</span> <span class="n">client_id</span><span class="p">,</span> <span class="n">client_secret</span><span class="p">,</span>
-                            <span class="n">code</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">extra_fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Handles the login for Github, queries /user and returns a user object</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;gau &#39;</span> <span class="o">+</span> <span class="n">redirect_uri</span><span class="p">)</span>
-        <span class="n">http</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpclient</span><span class="o">.</span><span class="n">AsyncHTTPClient</span><span class="p">()</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s">&quot;redirect_uri&quot;</span><span class="p">:</span> <span class="n">redirect_uri</span><span class="p">,</span>
-        <span class="s">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
-        <span class="s">&quot;client_id&quot;</span><span class="p">:</span> <span class="n">client_id</span><span class="p">,</span>
-        <span class="s">&quot;client_secret&quot;</span><span class="p">:</span> <span class="n">client_secret</span><span class="p">,</span>
-        <span class="p">}</span>
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; authenticate user if required &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_user</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
 
-        <span class="n">http</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_oauth_request_token_url</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">),</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">async_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_access_token</span><span class="p">,</span> <span class="n">redirect_uri</span><span class="p">,</span> <span class="n">client_id</span><span class="p">,</span>
-                                <span class="n">client_secret</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_on_access_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">redirect_uri</span><span class="p">,</span> <span class="n">client_id</span><span class="p">,</span> <span class="n">client_secret</span><span class="p">,</span>
-                        <span class="n">callback</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; callback for authentication url, if successful get the user details &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Github auth error: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
-            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
-            <span class="k">return</span>
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-        <span class="n">args</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">parse_qs_bytes</span><span class="p">(</span>
-                <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">native_str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">))</span>
+    <span class="c"># HTTP Verbs / Backbone.js API</span>
 
-        <span class="k">if</span> <span class="s">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;oauth error &#39;</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="s">&#39;error&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s">&#39;error&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-
-        <span class="n">session</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s">&quot;access_token&quot;</span><span class="p">:</span> <span class="n">args</span><span class="p">[</span><span class="s">&quot;access_token&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-        <span class="p">}</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">github_request</span><span class="p">(</span>
-            <span class="n">method</span><span class="o">=</span><span class="s">&quot;/user&quot;</span><span class="p">,</span>
-            <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">async_callback</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_on_get_user_info</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">session</span><span class="p">),</span>
-            <span class="n">access_token</span><span class="o">=</span><span class="n">session</span><span class="p">[</span><span class="s">&quot;access_token&quot;</span><span class="p">],</span>
-            <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_on_get_user_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; callback for github request /user to create a user &quot;&quot;&quot;</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;user data from github &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="n">callback</span><span class="p">({</span>
-            <span class="s">&quot;login&quot;</span><span class="p">:</span> <span class="n">user</span><span class="p">[</span><span class="s">&quot;login&quot;</span><span class="p">],</span>
-            <span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="n">user</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">],</span>
-            <span class="s">&quot;email&quot;</span><span class="p">:</span> <span class="n">user</span><span class="p">[</span><span class="s">&quot;email&quot;</span><span class="p">],</span>
-            <span class="s">&quot;access_token&quot;</span><span class="p">:</span> <span class="n">session</span><span class="p">[</span><span class="s">&quot;access_token&quot;</span><span class="p">],</span>
-        <span class="p">})</span>
-
-    <span class="k">def</span> <span class="nf">github_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">access_token</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                <span class="n">method</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Makes a github API request, hands callback the parsed data &quot;&quot;&quot;</span>
-        <span class="n">args</span><span class="p">[</span><span class="s">&quot;access_token&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">access_token</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httputil</span><span class="o">.</span><span class="n">url_concat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_API_URL</span> <span class="o">+</span> <span class="n">path</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;request to &#39;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
-        <span class="n">http</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpclient</span><span class="o">.</span><span class="n">AsyncHTTPClient</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">body</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">body</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">json_encode</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;body is&#39;</span> <span class="o">+</span>  <span class="n">body</span><span class="p">)</span>
-        <span class="n">http</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">async_callback</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_parse_response</span><span class="p">,</span> <span class="n">callback</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_parse_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Parse the JSON from the API &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;HTTP error from Github: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
-            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">json</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">json_decode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Invalid JSON from Github: </span><span class="si">%r</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
-            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">json</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;error_code&quot;</span><span class="p">):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Facebook error: </span><span class="si">%d</span><span class="s">: </span><span class="si">%r</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">json</span><span class="p">[</span><span class="s">&quot;error_code&quot;</span><span class="p">],</span>
-                            <span class="n">json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;error_msg&quot;</span><span class="p">))</span>
-            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
-            <span class="k">return</span>
-        <span class="n">callback</span><span class="p">(</span><span class="n">json</span><span class="p">)</span>
-</pre></div>
-
-
-<p>We can use this, as below, to create handlers to login a user - and in this case
-store the credentials in a secure cookie - or to make an API call for a logged
-in user:</p>
-<div class="highlight"><pre><span class="kn">import</span> <span class="nn">tornado.ioloop</span>
-<span class="kn">import</span> <span class="nn">tornado.web</span>
-<span class="kn">import</span> <span class="nn">tornado.escape</span>
-<span class="kn">import</span> <span class="nn">tornado.options</span>
-<span class="kn">import</span> <span class="nn">tornado.httputil</span>
-<span class="kn">import</span> <span class="nn">jinja2</span>
-<span class="kn">import</span> <span class="nn">pyjade.compiler</span>
-<span class="kn">import</span> <span class="nn">coffeescript</span>
-<span class="kn">import</span> <span class="nn">markdown</span>
-
-<span class="kn">import</span> <span class="nn">github</span>
-
-
-<span class="k">class</span> <span class="nc">GithubLoginHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">,</span> <span class="n">github</span><span class="o">.</span><span class="n">GithubMixin</span><span class="p">):</span>
-
-    <span class="n">_OAUTH_REDIRECT_URL</span> <span class="o">=</span> <span class="s">&#39;http://localhost:8888/auth/github&#39;</span>
-
-    <span class="nd">@tornado.web.asynchronous</span>
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c"># we can append next to the redirect uri, so the user gets the</span>
-        <span class="c"># correct URL on login</span>
-        <span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httputil</span><span class="o">.</span><span class="n">url_concat</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_OAUTH_REDIRECT_URL</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;next&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_argument</span><span class="p">(</span><span class="s">&#39;next&#39;</span><span class="p">,</span> <span class="s">&#39;/&#39;</span><span class="p">)})</span>
-
-        <span class="c"># if we have a code, we have been authorized so we can log in</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_argument</span><span class="p">(</span><span class="s">&quot;code&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">get_authenticated_user</span><span class="p">(</span>
-                <span class="n">redirect_uri</span><span class="o">=</span><span class="n">redirect_uri</span><span class="p">,</span>
-                <span class="n">client_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&quot;github_client_id&quot;</span><span class="p">],</span>
-                <span class="n">client_secret</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&quot;github_secret&quot;</span><span class="p">],</span>
-                <span class="n">code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_argument</span><span class="p">(</span><span class="s">&quot;code&quot;</span><span class="p">),</span>
-                <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">async_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_login</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="k">return</span>
-
-        <span class="c"># otherwise we need to request an authorization code</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">authorize_redirect</span><span class="p">(</span>
-                <span class="n">redirect_uri</span><span class="o">=</span><span class="n">redirect_uri</span><span class="p">,</span>
-                <span class="n">client_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&quot;github_client_id&quot;</span><span class="p">],</span>
-                <span class="n">extra_params</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;scope&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;github_scope&#39;</span><span class="p">],</span> <span class="s">&quot;foo&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
-
-    <span class="k">def</span> <span class="nf">_on_login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; This handles the user object from the login request &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">user</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;logged in user from github: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">set_secure_cookie</span><span class="p">(</span><span class="s">&quot;user&quot;</span><span class="p">,</span> <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">json_encode</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return the collection or a model  &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_get_collection</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">clear_cookie</span><span class="p">(</span><span class="s">&quot;user&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">redirect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_argument</span><span class="p">(</span><span class="s">&quot;next&quot;</span><span class="p">,</span><span class="s">&quot;/&quot;</span><span class="p">))</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">model</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; create a model &quot;&quot;&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">resp</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; update a model &quot;&quot;&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">resp</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; delete a model &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delete_model</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">GistLister</span><span class="p">(</span><span class="n">BaseHandler</span><span class="p">,</span> <span class="n">github</span><span class="o">.</span><span class="n">GithubMixin</span><span class="p">):</span>
+    <span class="c"># Extension points</span>
 
-    <span class="nd">@tornado.web.authenticated</span>
-    <span class="nd">@tornado.web.asynchronous</span>
-    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">github_request</span><span class="p">(</span>
-                <span class="s">&#39;/gists&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_on_get_gists</span><span class="p">,</span>
-                <span class="n">access_token</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_user</span><span class="p">[</span><span class="s">&#39;access_token&#39;</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">is_get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return true if this get is for a collection &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
 
-    <span class="k">def</span> <span class="nf">_on_get_gists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gists</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s">&#39;gists.jade&#39;</span><span class="p">,</span> <span class="n">gists</span><span class="o">=</span><span class="n">gists</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; create model and return a dictionary of updated attributes &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return the collection &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return a model, return None to indicate not found &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; update a model &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">delete_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; delete a model &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+
+
+
+<span class="k">class</span> <span class="nc">MongoBackboneHandler</span><span class="p">(</span><span class="n">BackboneHandler</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="n">BackboneHandler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">database</span>
+
+    <span class="c"># BackboneHandler extension</span>
+
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">Cursor</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s">&#39;_id&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span> <span class="c"># we have a cursor</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&#39;_id&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+                    <span class="n">d</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;_id&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ObjectId</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+        <span class="n">updates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">before_create</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">updates</span><span class="p">)</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+        <span class="n">updates</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mid</span>
+        <span class="k">return</span> <span class="n">updates</span>
+
+    <span class="k">def</span> <span class="nf">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection_query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">updates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">before_update</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">updates</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">),</span> <span class="n">model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">updates</span>
+
+    <span class="k">def</span> <span class="nf">delete_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
+
+    <span class="c"># Extension points</span>
+
+    <span class="k">def</span> <span class="nf">collection_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return the query to find a collection from a list of url args &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">model_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return the query to find a model &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;_id&#39;</span><span class="p">:</span> <span class="n">ObjectId</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])}</span>
+
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return False to to disallow this model &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">before_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return any extra attributes you want to add to the model &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">before_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="kn">import</span> <span class="nn">sys</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;backbone&#39;</span><span class="p">:</span>
+
+
+        <span class="k">class</span> <span class="nc">TestHandler</span><span class="p">(</span><span class="n">BackboneHandler</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">get_current_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot; we want to check auth/noauth &quot;&quot;&quot;</span>
+                <span class="k">return</span> <span class="s">&#39;test&#39;</span>
+
+            <span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">text</span><span class="o">=</span><span class="s">&#39;X&#39;</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+
+            <span class="k">def</span> <span class="nf">_find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+                <span class="n">ms</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">cid</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">ms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">ms</span> <span class="k">else</span> <span class="bp">None</span>
+
+            <span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+                <span class="n">model</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">max</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&#39;created&#39;</span><span class="p">,</span> <span class="n">model</span>
+                <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">id</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">])</span>
+
+            <span class="k">def</span> <span class="nf">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span>
+
+            <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">cid</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+                <span class="k">print</span> <span class="s">&#39;updating&#39;</span><span class="p">,</span> <span class="n">cid</span><span class="p">,</span> <span class="n">model</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">cid</span><span class="p">))]</span> <span class="o">=</span> <span class="n">model</span>
+
+            <span class="k">def</span> <span class="nf">delete_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+                <span class="k">print</span> <span class="s">&#39;deleting&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span>
+
+
+
+        <span class="n">application</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
+                <span class="p">(</span><span class="s">r&quot;/api&quot;</span><span class="p">,</span> <span class="n">TestHandler</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">r&quot;/api/(.+)&quot;</span><span class="p">,</span> <span class="n">TestHandler</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">debug</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">static_path</span><span class="o">=</span><span class="s">&#39;static&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+        <span class="n">application</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">9999</span><span class="p">)</span>
+        <span class="n">tornado</span><span class="o">.</span><span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">tornado.testing</span>
+        <span class="kn">import</span> <span class="nn">unittest</span>
+        <span class="kn">import</span> <span class="nn">urllib</span>
+
+        <span class="k">class</span> <span class="nc">Handler</span><span class="p">(</span><span class="n">MongoBackboneHandler</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">before_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">created</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+
+
+
+        <span class="k">class</span> <span class="nc">TestMongo</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">AsyncHTTPTestCase</span><span class="p">):</span>
+
+            <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">Connection</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="s">&#39;bh_test&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s">&#39;bh_test&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+                <span class="n">tornado</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">AsyncHTTPTestCase</span><span class="o">.</span><span class="n">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">tornado</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">AsyncHTTPTestCase</span><span class="o">.</span><span class="n">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">drop_database</span><span class="p">(</span><span class="s">&#39;bh_test&#39;</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">get_app</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
+                        <span class="p">(</span><span class="s">r&quot;/api/&quot;</span><span class="p">,</span> <span class="n">Handler</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">False</span><span class="p">)),</span>
+                        <span class="p">(</span><span class="s">r&quot;/api/(.+)&quot;</span><span class="p">,</span> <span class="n">Handler</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="p">,</span>
+                            <span class="n">auth</span><span class="o">=</span><span class="bp">False</span><span class="p">)),</span>
+                    <span class="p">],</span>
+                    <span class="n">debug</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">static_path</span><span class="o">=</span><span class="s">&#39;static&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">test_get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">],</span>  <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">test_get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">models</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">models</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;a&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">test_create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">post_args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;email&#39;</span><span class="p">:</span> <span class="s">&#39;bro@bro.com&#39;</span><span class="p">}</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span>
+                        <span class="n">body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">post_args</span><span class="p">))</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="s">&#39;_id&#39;</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">resp</span><span class="p">[</span><span class="s">&#39;created&#39;</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">test_update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+                <span class="n">model</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;1234&#39;</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span>
+                        <span class="n">body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">],</span> <span class="s">&#39;1234&#39;</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">test_delete_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;DELETE&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+
+        <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
 </pre></div>
 
                     <div class="clear"></div>
                     <div class="info">
-                        <a href="http://casbon.me/connecting-to-githubs-oauth2-api-with-tornado.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
+                        <a href="http://casbon.me/backbonejs-handlers-for-tornado-and-mongodb.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
                         <div class="tags">
                             <a href="http://casbon.me/tag/python.html">python</a>
                             <a href="http://casbon.me/tag/tornado.html">tornado</a>
+                            <a href="http://casbon.me/tag/mongodb.html">mongodb</a>
                         </div>                        
                     </div>
                     <div class="clear"></div>
@@ -466,7 +571,7 @@ in user:</p>
                 <div class="clear"></div>
                 <div class="pages">
                     <a href="http://casbon.me/author/james-casbon2.html" class="next_page">Next&nbsp;&rarr;</a>
-                    <span>Page 1 of 2</span>
+                    <span>Page 1 of 3</span>
                 </div>
 
                 <div class="clear"></div>
@@ -479,5 +584,16 @@ in user:</p>
             </div>
             <div class="clear"></div>
         </div>
+            <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-27713114-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+        
     </body>
 </html>

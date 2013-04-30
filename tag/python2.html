@@ -22,407 +22,575 @@
         </div>
         <div id="wrapper">
             <div id="content">
-                <h4 class="date">Jan  9,  2012</h4>
+                <h4 class="date">Apr 18,  2012</h4>
                 <div class="post">
                     <h2 class="title">
-                        <a href="http://casbon.me/html-templating-in-python-using-the-with-stat.html" rel="bookmark" title="Permanent Link to &quot;HTML Templating in Python using the with statement&quot;">HTML Templating in Python using the with statement</a>
+                        <a href="http://casbon.me/backbonejs-handlers-for-tornado-and-mongodb.html" rel="bookmark" title="Permanent Link to &quot;Backbone.js handlers for Tornado and MongoDB&quot;">Backbone.js handlers for Tornado and MongoDB</a>
                     </h2>
                     
-                    <p>A few weeks back, I hacked up a simple templating language using
-python's 'with' statement:</p>
-<div class="highlight"><pre><span class="n">d</span> <span class="o">=</span> <span class="n">Doc</span><span class="p">()</span>
-<span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">html</span><span class="p">:</span>
+                    <div class="highlight"><pre><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Backbone.js handler and mongodb based handler for Tornado.</span>
 
-    <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">head</span><span class="p">:</span>
-        <span class="n">d</span><span class="o">.</span><span class="n">title</span> <span class="p">(</span><span class="s">&#39;example page&#39;</span><span class="p">)</span>
-        <span class="n">d</span><span class="o">.</span><span class="n">link</span>  <span class="p">(</span><span class="n">rel</span><span class="o">=</span><span class="s">&#39;stylesheet&#39;</span><span class="p">,</span> <span class="n">href</span><span class="o">=</span><span class="s">&#39;/style.css&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;text/css&#39;</span><span class="p">)</span>
+<span class="sd">`BackboneHandler` handles the sync protocol for Backbone.js.  Inherit</span>
+<span class="sd">from the class and implement the model methods:</span>
+<span class="sd">    * create_model</span>
+<span class="sd">    * update_model</span>
+<span class="sd">    * get_model</span>
+<span class="sd">    * delete_model</span>
+<span class="sd">    * get_collection</span>
+<span class="sd">Optionally implement is_get_collection for complex url routing schemes.</span>
 
-    <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">body</span> <span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">):</span>
-        <span class="n">d</span><span class="o">.</span><span class="n">a</span> <span class="p">(</span><span class="s">&#39;other stuff on another page&#39;</span><span class="p">,</span> <span class="n">href</span><span class="o">=</span><span class="s">&#39;/other.html&#39;</span><span class="p">)</span>
-        <span class="n">d</span><span class="o">.</span><span class="n">p</span> <span class="p">(</span><span class="s">&#39;stuff on this page&#39;</span><span class="p">)</span>
-</pre></div>
+<span class="sd">`MongoBackboneHandler` implements these methods using a mongodb database.</span>
+<span class="sd">Inherit and implement the:</span>
+<span class="sd">    * model_query</span>
+<span class="sd">    * collection_query</span>
+<span class="sd">    * is_get_collection</span>
+<span class="sd">methods to map url arguments into database queries.  Also optionally implement:</span>
+<span class="sd">    * before_create</span>
+<span class="sd">    * before_update</span>
+<span class="sd">    * validate</span>
+<span class="sd">To validate and insert data into a document before a create/update</span>
 
-
-<p>It was inspired by coffeekup and haml, since I find it much easier to
-code html in those DSLs than with raw HTML (presumably, I need a
-better editor to help match tags and indent).  HTML I write these days
-tends to be as minimal as possible, and indent based languages help me
-see the structure much better, which is a product of too long spent
-with python.  See the gist below for the full description.</p>
-<p>I posted this to <a href="https://news.ycombinator.com/item?id=3340369">Hacker
-News</a> and it got into
-the top ten briefly, with a few nice comments, a few why bothers and a
-lot of prior art.  In particular, jperla's
-<a href="http://www.jperla.com/blog/post/weby-templates-are-easier-faster-and-more-flexible">weby</a>
-was very similar with a more involved syntax.  However, this getting
-to the top ten shows how easy it is to have 15 seconds of fame these
-days.  Next time, to number one.</p>
-<p>Anyway, here is the gist:</p>
-<div class="highlight"><pre><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">A really stupid python template language inspired by coffeekup, markaby.</span>
-<span class="sd">Do not use this code, it will ruin your day.  A byproduct of insomnia.</span>
-
-<span class="sd">TL;DR</span>
-<span class="sd">-----</span>
-
-<span class="sd">This module defines a template language that allows us to do:</span>
-
-<span class="sd">    d = Doc()</span>
-<span class="sd">    with d.html:</span>
-
-<span class="sd">        with d.head:</span>
-<span class="sd">            d.title (&#39;example page&#39;)</span>
-<span class="sd">            d.link  (rel=&#39;stylesheet&#39;, href=&#39;/style.css&#39;, type=&#39;text/css&#39;)</span>
-
-<span class="sd">        with d.body (style=&#39;foo&#39;):</span>
-<span class="sd">            d.a (&#39;other stuff on another page&#39;, href=&#39;/other.html&#39;)</span>
-<span class="sd">            d.p (&#39;stuff on this page&#39;)</span>
+<span class="sd">TODO: async version</span>
 
 
-<span class="sd">Motivation</span>
-<span class="sd">----------</span>
-
-<span class="sd">Python templating has always been a problem for me.  You normally have to</span>
-<span class="sd">write in your target language (i.e. HTML) with some horrible syntax for</span>
-<span class="sd">inlining python.  For example, this is a Cheetah [1] template:</span>
-
-<span class="sd">    &lt;html&gt;</span>
-<span class="sd">    &lt;head&gt;&lt;title&gt;$title&lt;/title&gt;&lt;/head&gt;</span>
-<span class="sd">    &lt;body&gt;</span>
-<span class="sd">        &lt;table&gt;</span>
-<span class="sd">        #for $client in $clients</span>
-<span class="sd">        &lt;tr&gt;</span>
-<span class="sd">            &lt;td&gt;$client.surname, $client.firstname&lt;/td&gt;</span>
-<span class="sd">            &lt;td&gt;&lt;a href=&quot;mailto:$client.email&quot;&gt;$client.email&lt;/a&gt;&lt;/td&gt;</span>
-<span class="sd">        &lt;/tr&gt;</span>
-<span class="sd">        #end for</span>
-<span class="sd">        &lt;/table&gt;</span>
-<span class="sd">    &lt;/body&gt;</span>
-<span class="sd">    &lt;/html&gt;</span>
-
-<span class="sd">We have &#39;$&#39; and &#39;#&#39; to inline python code and variables.  This to me is the</span>
-<span class="sd">wrong way round.  I want to write python and not html.  I do not want to manage</span>
-<span class="sd">html braces.  Tavis Rudd has pointed out that many of the arguments for</span>
-<span class="sd">non python templates are unfounded [2] and I agree with him.  This has been</span>
-<span class="sd">further enforced for me by using haml [3] and coffeekup [4], which leaves us in the</span>
-<span class="sd">ridiculous position that the best indent based templating DSLs for html are in</span>
-<span class="sd">non indent based languages (ruby, javascript).</span>
-
-<span class="sd">This is why we can&#39;t have nice things</span>
-<span class="sd">-------------------------------------</span>
-
-<span class="sd">Coffescript and ruby have some advantage over python for a DSL including the</span>
-<span class="sd">way anonymous blocks are defined and the ability to omit brackets and still get</span>
-<span class="sd">function execution.  This means that the most direct python templates, such as</span>
-<span class="sd">lxml builder[5] and breve [6] end up with a nested structure.  For example,</span>
-<span class="sd">this is an lxml template:</span>
-
-<span class="sd">    html = E.HTML(</span>
-<span class="sd">        E.HEAD(</span>
-<span class="sd">            E.LINK(rel=&quot;stylesheet&quot;, href=&quot;great.css&quot;, type=&quot;text/css&quot;),</span>
-<span class="sd">            E.TITLE(&quot;Best Page Ever&quot;)</span>
-<span class="sd">        ),</span>
-<span class="sd">        E.BODY(</span>
-<span class="sd">            E.H1(E.CLASS(&quot;heading&quot;), &quot;Top News&quot;),</span>
-<span class="sd">            E.P(&quot;World News only on this page&quot;, style=&quot;font-size: 200%&quot;),</span>
-<span class="sd">            &quot;Ah, and here&#39;s some more text, by the way.&quot;,</span>
-<span class="sd">            lxml.html.fromstring(&quot;&lt;p&gt;    and this is a parsed fragment    &lt;/p&gt;&quot;)</span>
-<span class="sd">        )</span>
-<span class="sd">        )</span>
-
-<span class="sd">Now, this code is python, but logic expressed this way still requires</span>
-<span class="sd">management of parens and is not indent based - so is not really &#39;pythonic&#39;.</span>
-<span class="sd">It also cannot really use conditionals and loops beyond ternarys and list comprehensions.</span>
-<span class="sd">So I wondered if we could hook up a bit of magic using some other method.</span>
-<span class="sd">So which way to go?  Function definitions would require too much magic, so it</span>
-<span class="sd">seems that the best way is the _with_ statement.</span>
-
-<span class="sd">The result is the style shown in the TL;DR above.  We can also</span>
-<span class="sd">wrap this in a template method to use python conditional logic based</span>
-<span class="sd">on supplied data:</span>
-
-<span class="sd">    def example_template(items):</span>
-<span class="sd">        d = Doc()</span>
-<span class="sd">        with d.html:</span>
-
-<span class="sd">            with d.head:</span>
-<span class="sd">                d.title (&#39;other stuff on this page&#39;)</span>
-<span class="sd">                d.link  (rel=&#39;stylesheet&#39;, href=&#39;/style.css&#39;, type=&#39;text/css&#39;)</span>
-
-<span class="sd">            with d.body (style=&#39;foo&#39;):</span>
-<span class="sd">                d.a (&#39;other stuff on another page&#39;, href=&#39;/other.html&#39;)</span>
-<span class="sd">                d.p (&#39;stuff on this page&#39;)</span>
-<span class="sd">                with d.ul:</span>
-<span class="sd">                    for i in items:</span>
-<span class="sd">                        with d.li:</span>
-<span class="sd">                            d.a (str(i), href=str(i) + &#39;.html&#39;)</span>
-<span class="sd">        return d.to_string()</span>
-
-<span class="sd">The code below also shows template inheritance from python classes.</span>
-
-<span class="sd">This is currently based on the lxml builder, and so it is slightly slower</span>
-<span class="sd">than the elementree benchmarks [7] (which is pretty slow).  The lazy decorator</span>
-<span class="sd">that allows us to miss out brackets on with statements is probably going</span>
-<span class="sd">to make you cry.  Still this seems like a reasonable template language in</span>
-<span class="sd">about 40 lines of code.</span>
-
-<span class="sd">[1] http://www.cheetahtemplate.org/examples.html</span>
-<span class="sd">[2] https://bitbucket.org/tavisrudd/throw-out-your-templates/src/98c5afba7f35/throw_out_your_templates.py</span>
-<span class="sd">[3] http://haml-lang.com/</span>
-<span class="sd">[4] http://coffeekup.org/</span>
-<span class="sd">[5] http://lxml.de/dev/api/lxml.builder.ElementMaker-class.html</span>
-<span class="sd">[6] http://breve.twisty-industries.com/</span>
-<span class="sd">[7] http://spitfire.googlecode.com/svn/trunk/tests/perf/bigtable.py</span>
-
-<span class="sd">Comments, abuse, etc to twitter @casualbon or casbon (at) gmail.com</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">lxml</span>
-<span class="kn">import</span> <span class="nn">lxml.html</span>
-<span class="kn">import</span> <span class="nn">lxml.html.builder</span>
-<span class="kn">import</span> <span class="nn">lxml.etree</span>
+<span class="kn">import</span> <span class="nn">json</span>
 
-<span class="k">class</span> <span class="nc">TagContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; The context manager for an HTML tag &quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">tornado.web</span>
+<span class="kn">import</span> <span class="nn">tornado.httpserver</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+<span class="kn">from</span> <span class="nn">pymongo.objectid</span> <span class="kn">import</span> <span class="n">ObjectId</span>
 
-    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;doc&#39;</span><span class="p">,</span> <span class="s">&#39;node&#39;</span><span class="p">,</span> <span class="s">&#39;tag&#39;</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">doc</span><span class="p">,</span> <span class="o">*</span><span class="n">content</span><span class="p">,</span> <span class="o">**</span><span class="n">props</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; create an html tag belonging to doc with given content and properties&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">doc</span> <span class="o">=</span> <span class="n">doc</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="o">=</span> <span class="n">tag</span>
+<span class="k">class</span> <span class="nc">BackboneHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">content</span><span class="p">,</span> <span class="o">**</span><span class="n">props</span><span class="p">):</span>
-        <span class="n">text</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
-        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;#&#39;</span><span class="p">:</span>
-                <span class="n">props</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;.&#39;</span><span class="p">:</span>
-                <span class="n">props</span><span class="p">[</span><span class="s">&#39;class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="n">auth</span>
+
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; authenticate user if required &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_user</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c"># HTTP Verbs / Backbone.js API</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return the collection or a model  &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_get_collection</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">model</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">text</span> <span class="o">+=</span> <span class="n">c</span>
+                <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
 
-        <span class="n">text</span> <span class="o">+=</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;text&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; create a model &quot;&quot;&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">resp</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">lxml</span><span class="o">.</span><span class="n">html</span><span class="o">.</span><span class="n">builder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag</span><span class="o">.</span><span class="n">upper</span><span class="p">())(</span><span class="o">**</span><span class="n">props</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">stack</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; update a model &quot;&quot;&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">),</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">resp</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="n">content</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; delete a model &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delete_model</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">tail_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span>
-        <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; entering the node appends it to the document stack &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">tail_node</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="c"># Extension points</span>
 
-    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; exiting the node pops it from the stack &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">stack</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">tail_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span>
+    <span class="k">def</span> <span class="nf">is_get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return true if this get is for a collection &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
 
-    <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterable</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">iterable</span><span class="p">:</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="p">():</span>
-                <span class="k">yield</span> <span class="bp">self</span><span class="p">,</span> <span class="n">i</span>
+    <span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; create model and return a dictionary of updated attributes &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return the collection &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return a model, return None to indicate not found &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">Lazydec</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Horrible decorator to allow the with statement to omit</span>
-<span class="sd">        brackets by tracking if context returned by doc has been entered</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; update a model &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
 
-    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">delete_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; delete a model &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;tagcallable&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">__enter__</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">MongoBackboneHandler</span><span class="p">(</span><span class="n">BackboneHandler</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">__exit__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
+        <span class="n">BackboneHandler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">database</span>
 
+    <span class="c"># BackboneHandler extension</span>
 
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">Cursor</span><span class="p">):</span>
+            <span class="k">if</span> <span class="s">&#39;_id&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-<span class="k">class</span> <span class="nc">Doc</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; A document manages a stack, the head of which is the current context node &quot;&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c"># we have a cursor</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s">&#39;_id&#39;</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+                    <span class="n">d</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
-    <span class="n">Context</span> <span class="o">=</span> <span class="n">TagContext</span>
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;_id&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">data</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ObjectId</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">data</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tail_node</span> <span class="o">=</span> <span class="bp">None</span> <span class="c"># this node is set if text needs to be put in its tail</span>
+    <span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">HTTPError</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span>
+        <span class="n">updates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">before_create</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">updates</span><span class="p">)</span>
+        <span class="n">mid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+        <span class="n">updates</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mid</span>
+        <span class="k">return</span> <span class="n">updates</span>
 
-    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Override getattr for quick tag access</span>
+    <span class="k">def</span> <span class="nf">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">collection_query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
 
-<span class="sd">            This means Doc.html returns a tag</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; append raw text &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tail_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tail_node</span><span class="o">.</span><span class="n">tail</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tail_node</span><span class="o">.</span><span class="n">tail</span> <span class="ow">or</span> <span class="s">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">text</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">text</span> <span class="ow">or</span> <span class="s">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">text</span>
+    <span class="k">def</span> <span class="nf">update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">updates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">before_update</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">updates</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">),</span> <span class="n">model</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">updates</span>
 
-    <span class="k">def</span> <span class="nf">fragment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">html</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; append a html fragment (must be a single element) &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lxml</span><span class="o">.</span><span class="n">html</span><span class="o">.</span><span class="n">fragment_fromstring</span><span class="p">(</span><span class="n">html</span><span class="p">))</span>
-        <span class="k">except</span> <span class="n">lxml</span><span class="o">.</span><span class="n">etree</span><span class="o">.</span><span class="n">ParserError</span><span class="p">:</span>
-            <span class="n">els</span> <span class="o">=</span> <span class="n">lxml</span><span class="o">.</span><span class="n">html</span><span class="o">.</span><span class="n">fragments_fromstring</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">els</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">delete_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_query</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pretty_print</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; convert this document to string &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">lxml</span><span class="o">.</span><span class="n">html</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="n">pretty_print</span><span class="o">=</span><span class="n">pretty_print</span><span class="p">,</span>
-                <span class="n">doctype</span><span class="o">=</span><span class="s">&#39;&lt;!DOCTYPE html&gt;&#39;</span><span class="p">)</span>
+    <span class="c"># Extension points</span>
 
+    <span class="k">def</span> <span class="nf">collection_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return the query to find a collection from a list of url args &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">None</span>
 
+    <span class="k">def</span> <span class="nf">model_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return the query to find a model &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;_id&#39;</span><span class="p">:</span> <span class="n">ObjectId</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])}</span>
 
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return False to to disallow this model &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">True</span>
 
-<span class="k">class</span> <span class="nc">BootstrapContext</span><span class="p">(</span><span class="n">TagContext</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">before_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; return any extra attributes you want to add to the model &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">_add_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">props</span><span class="p">,</span> <span class="n">cls</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s">&#39;class&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s">&#39;class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cls</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">props</span><span class="p">[</span><span class="s">&#39;class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">props</span><span class="p">[</span><span class="s">&#39;class&#39;</span><span class="p">]</span> <span class="o">+</span>  <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="n">cls</span>
+    <span class="k">def</span> <span class="nf">before_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{}</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">content</span><span class="p">,</span> <span class="o">**</span><span class="n">props</span><span class="p">):</span>
 
-        <span class="c"># support span and offset</span>
-        <span class="k">for</span> <span class="n">gridcls</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;span&#39;</span><span class="p">,</span> <span class="s">&#39;offset&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">gridcls</span> <span class="ow">in</span> <span class="n">props</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_add_class</span><span class="p">(</span><span class="n">props</span><span class="p">,</span> <span class="n">gridcls</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">props</span><span class="p">[</span><span class="n">gridcls</span><span class="p">]))</span>
-                <span class="n">props</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">gridcls</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
 
-        <span class="k">return</span> <span class="n">TagContext</span><span class="o">.</span><span class="n">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">content</span><span class="p">,</span> <span class="o">**</span><span class="n">props</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
 
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;backbone&#39;</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Bootstrap</span><span class="p">(</span><span class="n">Doc</span><span class="p">):</span>
-    <span class="n">Context</span> <span class="o">=</span> <span class="n">BootstrapContext</span>
 
+        <span class="k">class</span> <span class="nc">TestHandler</span><span class="p">(</span><span class="n">BackboneHandler</span><span class="p">):</span>
 
+            <span class="k">def</span> <span class="nf">get_current_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="sd">&quot;&quot;&quot; we want to check auth/noauth &quot;&quot;&quot;</span>
+                <span class="k">return</span> <span class="s">&#39;test&#39;</span>
 
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+            <span class="n">models</span> <span class="o">=</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">text</span><span class="o">=</span><span class="s">&#39;X&#39;</span> <span class="o">*</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
 
-    <span class="k">def</span> <span class="nf">example_template</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; template function example&quot;&quot;&quot;</span>
+            <span class="k">def</span> <span class="nf">_find</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+                <span class="n">ms</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">cid</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">ms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">ms</span> <span class="k">else</span> <span class="bp">None</span>
 
-        <span class="n">d</span> <span class="o">=</span> <span class="n">Doc</span><span class="p">()</span>
-        <span class="n">p</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">html</span><span class="p">()</span>
-        <span class="k">print</span> <span class="n">p</span><span class="o">.</span><span class="n">__class__</span>
-        <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">html</span><span class="p">():</span>
-            <span class="n">d</span><span class="o">.</span><span class="n">fragment</span><span class="p">(</span><span class="s">&#39;&lt;h1&gt;no tail&lt;/h1&gt;&#39;</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+                <span class="n">model</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">max</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&#39;created&#39;</span><span class="p">,</span> <span class="n">model</span>
+                <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">id</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">])</span>
 
-            <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">head</span><span class="p">():</span>
-                <span class="n">d</span><span class="o">.</span><span class="n">title</span> <span class="p">(</span><span class="s">&#39;other stuff on this page&#39;</span><span class="p">)</span>
-                <span class="n">d</span><span class="o">.</span><span class="n">link</span>  <span class="p">(</span><span class="n">rel</span><span class="o">=</span><span class="s">&#39;stylesheet&#39;</span><span class="p">,</span> <span class="n">href</span><span class="o">=</span><span class="s">&#39;/style.css&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;text/css&#39;</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span>
 
-            <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">body</span> <span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">):</span>
-                <span class="n">d</span><span class="o">.</span><span class="n">a</span> <span class="p">(</span><span class="s">&#39;other stuff on another page&#39;</span><span class="p">,</span> <span class="n">href</span><span class="o">=</span><span class="s">&#39;/other.html&#39;</span><span class="p">)</span>
-                <span class="n">d</span><span class="o">.</span><span class="n">p</span> <span class="p">(</span><span class="s">&#39;stuff on this page&#39;</span><span class="p">)</span>
-                <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">ul</span><span class="p">():</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
-                        <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">li</span><span class="p">():</span>
+            <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">cid</span><span class="p">)</span>
 
-                            <span class="n">d</span><span class="o">.</span><span class="n">a</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">href</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;.html&#39;</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+                <span class="k">print</span> <span class="s">&#39;updating&#39;</span><span class="p">,</span> <span class="n">cid</span><span class="p">,</span> <span class="n">model</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">cid</span><span class="p">))]</span> <span class="o">=</span> <span class="n">model</span>
 
-                <span class="n">d</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s">&#39;hi&#39;</span><span class="p">)</span>
-                <span class="n">d</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="s">&#39;.foo&#39;</span><span class="p">,</span> <span class="s">&#39;#bar&#39;</span><span class="p">,</span> <span class="s">&#39;inside el&#39;</span><span class="p">)</span>
-                <span class="n">d</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s">&#39;bye&#39;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">to_string</span><span class="p">()</span>
+            <span class="k">def</span> <span class="nf">delete_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cid</span><span class="p">):</span>
+                <span class="k">print</span> <span class="s">&#39;deleting&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_find</span><span class="p">(</span><span class="n">cid</span><span class="p">))</span>
 
 
-    <span class="k">class</span> <span class="nc">BaseTemplate</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; template inheritance example &quot;&quot;&quot;</span>
 
-        <span class="n">title</span> <span class="o">=</span> <span class="s">&#39;base&#39;</span>
+        <span class="n">application</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
+                <span class="p">(</span><span class="s">r&quot;/api&quot;</span><span class="p">,</span> <span class="n">TestHandler</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">r&quot;/api/(.+)&quot;</span><span class="p">,</span> <span class="n">TestHandler</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">debug</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">static_path</span><span class="o">=</span><span class="s">&#39;static&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="n">d</span> <span class="o">=</span> <span class="n">Doc</span><span class="p">()</span>
-            <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">html</span><span class="p">():</span>
 
-                <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">head</span><span class="p">():</span>
-                    <span class="n">d</span><span class="o">.</span><span class="n">title</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
-                    <span class="n">d</span><span class="o">.</span><span class="n">link</span>  <span class="p">(</span><span class="n">rel</span><span class="o">=</span><span class="s">&#39;stylesheet&#39;</span><span class="p">,</span> <span class="n">href</span><span class="o">=</span><span class="s">&#39;/style.css&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">&#39;text/css&#39;</span><span class="p">)</span>
+        <span class="n">application</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">9999</span><span class="p">)</span>
+        <span class="n">tornado</span><span class="o">.</span><span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
-                <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">body</span> <span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">):</span>
-                    <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">div</span> <span class="p">(</span><span class="s">&#39;#header&#39;</span><span class="p">):</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
-                    <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">div</span> <span class="p">(</span><span class="s">&#39;#content&#39;</span><span class="p">):</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">content</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
-                    <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">div</span> <span class="p">(</span><span class="s">&#39;#footer&#39;</span><span class="p">):</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">footer</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">tornado.testing</span>
+        <span class="kn">import</span> <span class="nn">unittest</span>
+        <span class="kn">import</span> <span class="nn">urllib</span>
 
-            <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">to_string</span><span class="p">()</span>
+        <span class="k">class</span> <span class="nc">Handler</span><span class="p">(</span><span class="n">MongoBackboneHandler</span><span class="p">):</span>
 
-        <span class="k">def</span> <span class="nf">header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
-            <span class="k">pass</span>
+            <span class="k">def</span> <span class="nf">before_create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+                <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">created</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
-            <span class="k">pass</span>
 
-        <span class="k">def</span> <span class="nf">footer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
-            <span class="n">d</span><span class="o">.</span><span class="n">span</span><span class="p">(</span><span class="s">&#39;Never read this content&#39;</span><span class="p">)</span>
 
 
-    <span class="k">class</span> <span class="nc">ItemTemplate</span><span class="p">(</span><span class="n">BaseTemplate</span><span class="p">):</span>
+        <span class="k">class</span> <span class="nc">TestMongo</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">AsyncHTTPTestCase</span><span class="p">):</span>
 
-        <span class="n">title</span> <span class="o">=</span> <span class="s">&#39;item view&#39;</span>
+            <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">Connection</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">[</span><span class="s">&#39;bh_test&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="p">[</span><span class="s">&#39;bh_test&#39;</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+                <span class="n">tornado</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">AsyncHTTPTestCase</span><span class="o">.</span><span class="n">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="n">items</span>
+            <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">tornado</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">AsyncHTTPTestCase</span><span class="o">.</span><span class="n">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">drop_database</span><span class="p">(</span><span class="s">&#39;bh_test&#39;</span><span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
-            <span class="n">d</span><span class="o">.</span><span class="n">p</span><span class="p">(</span><span class="s">&#39;view of </span><span class="si">%s</span><span class="s"> items&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">))</span>
+            <span class="k">def</span> <span class="nf">get_app</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">([</span>
+                        <span class="p">(</span><span class="s">r&quot;/api/&quot;</span><span class="p">,</span> <span class="n">Handler</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">False</span><span class="p">)),</span>
+                        <span class="p">(</span><span class="s">r&quot;/api/(.+)&quot;</span><span class="p">,</span> <span class="n">Handler</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="p">,</span>
+                            <span class="n">auth</span><span class="o">=</span><span class="bp">False</span><span class="p">)),</span>
+                    <span class="p">],</span>
+                    <span class="n">debug</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">static_path</span><span class="o">=</span><span class="s">&#39;static&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
-            <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">ul</span><span class="p">():</span>
-                <span class="k">for</span> <span class="n">li</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">li</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">):</span>
-                    <span class="n">li</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
-                    <span class="n">d</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s">&#39;the cake is a li&#39;</span><span class="p">)</span>
-                    <span class="n">d</span><span class="o">.</span><span class="n">a</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">href</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;.html&#39;</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">test_get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">],</span>  <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">model</span><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">bootstrap_example</span><span class="p">():</span>
-        <span class="n">d</span> <span class="o">=</span> <span class="n">Bootstrap</span><span class="p">()</span>
-        <span class="k">with</span> <span class="n">d</span><span class="o">.</span><span class="n">html</span><span class="p">():</span>
-            <span class="n">d</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="s">&#39;#main&#39;</span><span class="p">,</span> <span class="n">span</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">def</span> <span class="nf">test_get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">models</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">models</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;a&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">to_string</span><span class="p">()</span>
+            <span class="k">def</span> <span class="nf">test_create_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">post_args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;email&#39;</span><span class="p">:</span> <span class="s">&#39;bro@bro.com&#39;</span><span class="p">}</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;POST&#39;</span><span class="p">,</span>
+                        <span class="n">body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">post_args</span><span class="p">))</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="s">&#39;_id&#39;</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">resp</span><span class="p">[</span><span class="s">&#39;created&#39;</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span>
 
-    <span class="k">print</span> <span class="n">example_template</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-    <span class="k">print</span>
-    <span class="k">print</span> <span class="n">ItemTemplate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
-    <span class="k">print</span>
+            <span class="k">def</span> <span class="nf">test_update_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+                <span class="n">model</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;1234&#39;</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span>
+                        <span class="n">body</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">doc</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">],</span> <span class="s">&#39;1234&#39;</span><span class="p">)</span>
 
+            <span class="k">def</span> <span class="nf">test_delete_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">&#39;/api/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="s">&#39;DELETE&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+                <span class="n">doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coll</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
 
-    <span class="k">print</span> <span class="n">bootstrap_example</span><span class="p">()</span>
+
+        <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
 </pre></div>
 
                     <div class="clear"></div>
                     <div class="info">
-                        <a href="http://casbon.me/html-templating-in-python-using-the-with-stat.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
+                        <a href="http://casbon.me/backbonejs-handlers-for-tornado-and-mongodb.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
                         <div class="tags">
                             <a href="http://casbon.me/tag/python.html" class="selected">python</a>
-                            <a href="http://casbon.me/tag/templates.html">templates</a>
+                            <a href="http://casbon.me/tag/tornado.html">tornado</a>
+                            <a href="http://casbon.me/tag/mongodb.html">mongodb</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
+                <h4 class="date">Feb 21,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="http://casbon.me/what-will-pypy-do-for-your-website-benchmarki.html" rel="bookmark" title="Permanent Link to &quot;What will pypy do for your website?&quot;">What will pypy do for your website?</a>
+                    </h2>
+                    
+                    <p>There are currently quite a few different ways of developing a web application in python.&nbsp; When you add in how you deploy the application as well, there are even more choices.&nbsp; In terms of application frameworks, you have at least:</p>
+
+<ul>
+<li>Django</li>
+<li>twisted.web</li>
+<li>flask</li>
+<li>bottle</li>
+<li>cyclone</li>
+<li>tornado</li>
+<li>pyramid</li>
+</ul>
+
+<p>Then these can be run using many different servers, including:</p>
+
+<ul>
+<li>tornado</li>
+<li>twisted</li>
+<li>cyclone</li>
+<li>wsgiref</li>
+<li>rocket</li>
+<li>cherrypy</li>
+<li>gunicorn</li>
+<li>fapws</li>
+<li>google app engine</li>
+<li>gevent</li>
+</ul>
+
+<p>And many more.&nbsp; Typically, these take one of several approaches.&nbsp; Asynchronous either explicit (cyclone, tornado) or via monkey patch and event loop (gevent); threaded such as rocket, or written in C to use an event loop.&nbsp; In addition to this, you now have several different pythons for deployment:</p>
+
+<ul>
+<li>cpython </li>
+<li>jython</li>
+<li>pypy</li>
+</ul>
+
+<p>At some point, these servers are generally dealing with asynchronous event loops or using threading.&nbsp; The two approaches to handling this are either to program in a normal style (gevent) or to explicitly use event based programming (eg cyclone).&nbsp; The rise of javascript and node.js has seen event based programming becoming more mainstream.&nbsp; I wanted to find out which of these many combinations would perform best, and in particular what effect using pypy as the interpreter would have on the performance.</p>
+
+<p><strong>The benchmark</strong></p>
+
+<p>I created a fairly simple benchmark and implemented it across the different application styles.&nbsp; The benchmark creates one route which renders 'Hello world', a click counter stored by redis that we increase, and finally a static 2,000 character string that we retrieve from redis.&nbsp; I then run ab against the application for 10,000 requests for three replicates at different levels of concurrency (4, 16, 64, 256 connections).&nbsp; We take the stats for the requests per second and also the total request time averages, range and standard deviation.</p>
+
+<p>These were run on a linux box with the kernel 'Linux 2.6.41.4-1.fc15.x86_64 #1 SMP Tue Nov 29 11:53:48 UTC 2011 x86_64 x86_64 x86_64 GNU/Linux' and 24 core 'Intel(R) Xeon(R) CPU&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; X5675&nbsp; @ 3.07GH' (although only one core will be used for python) and 48Gb ram.&nbsp; The pythons used were 'Python 2.7.1' and 'Python 2.7.2, [PyPy 1.8.0 with GCC 4.4.6]'.</p>
+
+<p>You can run the benchmark by checking out <a href="https://github.com/jamescasbon/pypy-web-benchmarks">the repository</a> on github.&nbsp; If you know anything about the application styles, I would encourage you to take a look at the implementations in the servers directory.</p>
+
+<p>The versions used are:</p>
+
+<ul>
+<li>Flask==0.8</li>
+<li>Paste==1.7.5.1</li>
+<li>Rocket==1.2.4</li>
+<li>Twisted==12.0.0</li>
+<li>WebOb==1.2b3</li>
+<li>Werkzeug==0.8.3</li>
+<li>bottle==0.10.9</li>
+<li>bottle-redis==0.1</li>
+<li>cyclone==1.0-rc3</li>
+<li>distribute==0.6.24</li>
+<li>pyramid==1.3a8</li>
+<li>redis==2.4.11</li>
+<li>repoze.lru==0.4</li>
+<li>tornado==2.2</li>
+<li>gevent==1.0dev</li>
+<li>greenlet==0.3.4</li>
+<li>eventlet==0.9.16</li>
+<li>CherryPy==3.2.2</li>
+</ul>
+
+<p>I patched bottle-redis to use a connection queue and bottle to silence the logging when using gevent.&nbsp; Twisted needs C extensions disabled to install on pypy.</p>
+
+<p><strong>Results</strong></p>
+
+<p><em>JIT effect</em></p>
+
+<p>The first thing to notice is that pypy takes a little time to optmize the code.&nbsp; This plot shows the requests per second for each test in iterations 1, 2 and 3.&nbsp; Pypy is on the left (True) and cpython on the right (False).&nbsp; The vertical facet is by the concurrency.<img class="posterous_plugin_object posterous_plugin_object_image" src="http://getfile7.posterous.com/getfile/files.posterous.com/temp-2012-02-23/bmGaFmoDEaBqAGjrHIwctEpfeabsnHEaeutztuqpdHjdJxxiDwDDJnHzcEcz/jit-effect.png.thumb100.png?content_part=aaCDhogwbAdzqCsGmFbq" alt="" width="100" height="100" /></p>
+
+<p>You can clearly see the effect of the JIT. Cpython, on the right, has stable performance across all iterations.&nbsp; Pypy shows a marked improvement from the second iteration.</p>
+
+<p><em>Requests per second</em></p>
+
+<p>We now look at requests per second against concurrency across all combinations of application and server.&nbsp; Each box contains pypy and cpython lines, where available.&nbsp; These are from the third iteration, when the JIT compiler has done its work</p>
+
+<p><img class="posterous_plugin_object posterous_plugin_object_image" src="http://getfile3.posterous.com/getfile/files.posterous.com/temp-2012-02-23/oyJiczHyxdCdJwbgpffzzgbjoGoBizIBtauIJnotAorbFkJqDmDmhCtphBxo/rqs.png.thumb100.png?content_part=xDzhccdximrxsAdxugtb" alt="" width="100" height="100" /></p>
+
+<p>Looking at this, you can see a few things.&nbsp; <span style="text-decoration: line-through;">Twisted and</span> Cherrypy and paste are not really stable under increasing concurrency shown by the lines sloping to the right or incomplete lines (server failed).&nbsp; Gevent, tornado and cyclone are stable under loads and show fairly equivalent performance under cpython.&nbsp; Pypy introduces a 1.5-2x performance increase for almost all servers.</p>
+
+<p>Comparing the microframeworks, flask and bottle, bottle is always faster and really flies under tornado and gevent.&nbsp; Pyramid does the best and serves over 5,000 requests per second with tornado and pypy.&nbsp; Cyclone comes second under pypy with over 3,500 requests per second.&nbsp; However, I found the lack of performance increase over tornado and bottle slightly dissapointing, since cyclone is using an async redis connection.</p>
+
+<p><em>Response time</em></p>
+
+<p>Here we look at the average response time, its standard deviation, and the maximum response time.&nbsp; A very similar picture for all technologies: under increasing concurrency the response times degrade.</p>
+
+<p><img class="posterous_plugin_object posterous_plugin_object_image" src="http://getfile2.posterous.com/getfile/files.posterous.com/temp-2012-02-23/FwsagyymsgqhcnnygqsviuvDnudBClIjHJwdhFyGpczbDADlCBlrblklzllq/time.png.thumb100.png?content_part=hBDrHrchezHukbcegIfg" alt="" width="100" height="100" /></p>
+
+<p>No clear winner between pypy and cpython.</p>
+
+<p><strong>Conclusions</strong></p>
+
+<ul>
+<li>Gevent and tornado have excellent WSGI servers that can serve 1,000s of requests per second. </li>
+<li>Pypy can provide 1.5-2x performance, and this is available with tornado and cyclone but not gevent</li>
+<li>Explicit async code in cyclone did not provide a noticeable increase in performance over tornado, pyramid and bottle</li>
+<li>bottle outperforms flask and really flies with gevent and tornado</li>
+<li>pyramid is really fast with gevent and tornado</li>
+<li>threading approaches don't seem to match the other approaches here </li>
+<li>cherrypy seems to have problems with higher concurrencies</li>
+</ul>
+
+<p>Overall, I think this shows if you are really interested in performance you should take a good look at pypy.&nbsp; I have a lot of respect for the tornado code now, and would seriously consider it for future projects.&nbsp; Bottle is a very good microframework that outperforms flask.</p>
+
+<p><strong>Changes</strong></p>
+
+<p>23/2/12 Add cherrypy, eventlet, created common wsgi server code<strong>.&nbsp; </strong>Couldn't get eventlet to run stable under pypy (socket and RPy errors).<strong><br /></strong></p>
+
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="http://casbon.me/what-will-pypy-do-for-your-website-benchmarki.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
+                        <div class="tags">
+                            <a href="http://casbon.me/tag/python.html" class="selected">python</a>
+                            <a href="http://casbon.me/tag/postgresql.html">postgresql</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
+                <h4 class="date">Feb 15,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="http://casbon.me/test-driven-sysadmin-with-lettuce-and-fabric.html" rel="bookmark" title="Permanent Link to &quot;Test Driven Sysadmin with Lettuce and Fabric&quot;">Test Driven Sysadmin with Lettuce and Fabric</a>
+                    </h2>
+                    
+                    <p>I have been thinking about test driven sysadmin recently. We wouldn&rsquo;t want
+to write code without tests, so we also shouldn&rsquo;t want to create
+untestable pieces of infrastructure.</p>
+<p>I think cucumber (or gherkin) could be a nice way of expressing policy:</p>
+<div class="highlight"><pre><span class="n">Feature</span><span class="o">:</span> <span class="n">Mail</span>
+    <span class="n">In</span> <span class="n">order</span> <span class="n">to</span> <span class="n">handle</span> <span class="n">mail</span>
+<span class="err"> </span>
+    <span class="n">Scenario</span><span class="o">:</span> <span class="n">Mail</span> <span class="n">relay</span>
+        <span class="n">Given</span> <span class="n">I</span> <span class="n">am</span> <span class="n">a</span> <span class="n">production</span> <span class="n">server</span>
+        <span class="n">And</span> <span class="n">I</span> <span class="n">am</span> <span class="n">not</span> <span class="n">a</span> <span class="n">mail</span> <span class="n">server</span> 
+        <span class="n">Then</span> <span class="n">I</span> <span class="n">should</span> <span class="n">have</span> <span class="n">postfix</span> <span class="n">installed</span>
+        <span class="n">And</span> <span class="n">I</span> <span class="n">should</span> <span class="n">have</span> <span class="n">a</span> <span class="n">mail</span> <span class="n">relay</span> <span class="n">to</span> <span class="n">mail</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">org</span>
+<span class="err"> </span>
+    <span class="n">Scenario</span><span class="o">:</span> <span class="n">Mail</span> <span class="n">server</span>
+        <span class="n">Given</span> <span class="n">I</span> <span class="n">am</span> <span class="n">a</span> <span class="n">mail</span> <span class="n">server</span>
+        <span class="n">Then</span> <span class="n">I</span> <span class="n">should</span> <span class="n">have</span> <span class="n">postfix</span> <span class="n">installed</span> 
+        <span class="n">And</span> <span class="n">postfix</span> <span class="n">should</span> <span class="n">be</span> <span class="n">running</span> 
+        <span class="n">And</span> <span class="n">I</span> <span class="n">should</span> <span class="n">be</span> <span class="n">listening</span> <span class="n">on</span> <span class="n">port</span> <span class="mi">25</span>
+</pre></div>
+
+
+<p>Now, the idea is that the scenarios are skipped when the clauses in the
+&lsquo;given&rsquo; part are not met. In this case I have defined two
+scenarios: a mail server and a production server to relay via a mail host. When
+I run this against a host, the given clauses work out which policies to test. I
+needed to teach lettuce to have skippable scenarios. You can find a rough and
+ready implementation of this on <a href="https://github.com/jamescasbon/lettuce/tree/sysadmin">my branch of
+lettuce</a>. Now all that is
+needed is to implement the steps to check those features (which is at the
+bottom of this post). </p>
+<p>The nice part about this is I can write a fair amount of logic in python to
+test the state of the system, but these can be calling out to fabric simple
+shell calls. i.e. I don&rsquo;t need to install python onto to the system I
+wish to test. Changes in policy can be tested site wide by testing a feature
+against all hosts. I can also test the external view of the test machine from
+my box by say, accessing a port or using an http get.</p>
+<p>This is just the sketch of an idea: I need to write a command line tool to
+handle the setup of of fabric hosts, and to allow multiple hosts to be tested
+at once. I would also like to add a fix mode, whereby failing steps could call
+out to the code that corrects a failing policy. Do you think this is a good way
+to test a policy?</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">lettuce</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">fabric</span> <span class="kn">import</span> <span class="n">api</span>
+<span class="kn">from</span> <span class="nn">fabric.api</span> <span class="kn">import</span> <span class="n">env</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="err"> </span>
+<span class="n">servers</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;xxx.local&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&#39;ip&#39;</span><span class="p">:</span> <span class="s">&#39; xxxx&#39;</span><span class="p">,</span>
+            <span class="s">&#39;roles&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;production&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+<span class="p">}</span>
+<span class="err"> </span>
+<span class="c"># world is the lettuce singleton</span>
+<span class="n">world</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span>
+<span class="n">world</span><span class="o">.</span><span class="n">installed</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;postfix&#39;</span><span class="p">:</span> <span class="bp">False</span> <span class="p">}</span>
+<span class="err"> </span>
+<span class="c"># configure fabric to point at localhost</span>
+<span class="c"># and to supress output</span>
+<span class="n">env</span><span class="o">.</span><span class="n">host_string</span> <span class="o">=</span> <span class="s">&#39;localhost&#39;</span>
+<span class="n">env</span><span class="o">.</span><span class="n">warn_only</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="kn">import</span> <span class="nn">fabric.state</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>  <span class="n">fabric</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">:</span>
+    <span class="n">fabric</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="err"> </span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I am a (\w+) server&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">has_a_role</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">role</span><span class="p">):</span>
+    <span class="n">hostname</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;hostname&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">servers</span><span class="p">[</span><span class="n">hostname</span><span class="p">][</span><span class="s">&#39;roles&#39;</span><span class="p">]</span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I am not a (\w+) server&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">doesnt_have_a_role</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">role</span><span class="p">):</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="n">has_a_role</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">role</span><span class="p">)</span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I should have (\w+) installed&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_installed</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">package</span><span class="p">):</span>
+    <span class="c"># should call out to apt/rpm</span>
+    <span class="k">return</span> <span class="n">world</span><span class="o">.</span><span class="n">installed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I should have a mail relay to (\w+)&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_mail_relay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">package</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;grep foo /etc/passwd&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="p">,</span> <span class="s">&#39;relay not set up&#39;</span>
+<span class="err"> </span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;(\w+) should be running&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_service_running</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">service</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">True</span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I should be listening on port (\d+)&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_service_running</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">True</span>
+</pre></div>
+
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="http://casbon.me/test-driven-sysadmin-with-lettuce-and-fabric.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
+                        <div class="tags">
+                            <a href="http://casbon.me/tag/python.html" class="selected">python</a>
+                            <a href="http://casbon.me/tag/devops.html">devops</a>
                         </div>                        
                     </div>
                     <div class="clear"></div>
@@ -431,7 +599,8 @@ days.  Next time, to number one.</p>
                 <div class="clear"></div>
                 <div class="pages">                
                     <a href="http://casbon.me/tag/python.html" class="prev_page">&larr;&nbsp;Previous</a>
-                    <span>Page 2 of 2</span>
+                    <a href="http://casbon.me/tag/python3.html" class="next_page">Next&nbsp;&rarr;</a>
+                    <span>Page 2 of 3</span>
                 </div>
 
                 <div class="clear"></div>
@@ -444,5 +613,16 @@ days.  Next time, to number one.</p>
             </div>
             <div class="clear"></div>
         </div>
+            <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-27713114-1']);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script>
+        
     </body>
 </html>

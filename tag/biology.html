@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-        <title>casbon.me</title>
+        <title>casbon.me &middot; articles tagged "biology"</title>
         <link rel="shortcut icon" href="http://casbon.me/favicon.ico" />
         <link href="http://casbon.me/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="casbon.me Atom Feed" />
                 
@@ -12,7 +12,7 @@
     <body>
         <div id="header">
             <ul id="nav">
-                <li class="ephemeral selected"><a href="http://casbon.me/tags.html">tags</a></li>
+                <li class="ephemeral selected"><a href="http://casbon.me/tag/biology.html">biology</a></li>
                 <li><a href="http://casbon.me">Home</a></li>
                 <li><a href="http://casbon.me/archives.html">Archives</a></li>
             </ul>
@@ -22,16 +22,33 @@
         </div>
         <div id="wrapper">
             <div id="content">
-                <a class="tag" href="/tag/mythtv.html" style="font-size: 0.75em;" title="mythtv">mythtv</a>
-                <a class="tag" href="/tag/pvr.html" style="font-size: 0.75em;" title="pvr">pvr</a>
-                <a class="tag" href="/tag/python.html" style="font-size: 2.5em;" title="python">python</a>
-                <a class="tag" href="/tag/biology.html" style="font-size: 0.75em;" title="biology">biology</a>
-                <a class="tag" href="/tag/devops.html" style="font-size: 0.75em;" title="devops">devops</a>
-                <a class="tag" href="/tag/mongodb.html" style="font-size: 0.75em;" title="mongodb">mongodb</a>
-                <a class="tag" href="/tag/tornado.html" style="font-size: 1.91666666667em;" title="tornado">tornado</a>
-                <a class="tag" href="/tag/postgresql.html" style="font-size: 1.91666666667em;" title="postgresql">postgresql</a>
-                <a class="tag" href="/tag/templates.html" style="font-size: 0.75em;" title="templates">templates</a>
-                
+                <h4 class="date">Jun  3,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="http://casbon.me/pyvcf-06-release-cython-and-performance.html" rel="bookmark" title="Permanent Link to &quot;PyVCF 0.6 Release: Cython and Performance&quot;">PyVCF 0.6 Release: Cython and Performance</a>
+                    </h2>
+                    
+                    <p>I just uploaded the <a href="https://crate.io/packages/PyVCF/">PyVCF 0.6 release</a> to pypi. &nbsp;This release concentrated on performance and will use a cythonized inner loop if you install it with cython. &nbsp;There is a small backwards incompatible change, which is that the call data (the cells in a VCF file) are now stored as a namedtuple.</p>
+
+<p>A simple performance benchmark parsing a 1kg file:&nbsp;</p>
+
+<ul>
+<li>pyvcf: 1.8s / 100%</li>
+<li>cyvcf: 2.3s / 127%</li>
+<li>vcftools: 2.9s / 161%</li>
+</ul>
+
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="http://casbon.me/pyvcf-06-release-cython-and-performance.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
+                        <div class="tags">
+                            <a href="http://casbon.me/tag/python.html">python</a>
+                            <a href="http://casbon.me/tag/biology.html" class="selected">biology</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
                 <div class="clear"></div>
                 <div id="footer">
                     <p>

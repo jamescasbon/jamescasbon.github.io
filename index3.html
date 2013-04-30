@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-        <title>casbon.me &middot; articles tagged "templates"</title>
+        <title>casbon.me</title>
         <link rel="shortcut icon" href="http://casbon.me/favicon.ico" />
         <link href="http://casbon.me/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="casbon.me Atom Feed" />
                 
@@ -12,8 +12,7 @@
     <body>
         <div id="header">
             <ul id="nav">
-                <li class="ephemeral selected"><a href="http://casbon.me/tag/templates.html">templates</a></li>
-                <li><a href="http://casbon.me">Home</a></li>
+                <li class="selected"><a href="http://casbon.me">Home</a></li>
                 <li><a href="http://casbon.me/archives.html">Archives</a></li>
             </ul>
             <div class="header_box">
@@ -22,6 +21,118 @@
         </div>
         <div id="wrapper">
             <div id="content">
+                <h4 class="date">Feb 15,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="http://casbon.me/test-driven-sysadmin-with-lettuce-and-fabric.html" rel="bookmark" title="Permanent Link to &quot;Test Driven Sysadmin with Lettuce and Fabric&quot;">Test Driven Sysadmin with Lettuce and Fabric</a>
+                    </h2>
+                    
+                    <p>I have been thinking about test driven sysadmin recently. We wouldn&rsquo;t want
+to write code without tests, so we also shouldn&rsquo;t want to create
+untestable pieces of infrastructure.</p>
+<p>I think cucumber (or gherkin) could be a nice way of expressing policy:</p>
+<div class="highlight"><pre><span class="n">Feature</span><span class="o">:</span> <span class="n">Mail</span>
+    <span class="n">In</span> <span class="n">order</span> <span class="n">to</span> <span class="n">handle</span> <span class="n">mail</span>
+<span class="err"> </span>
+    <span class="n">Scenario</span><span class="o">:</span> <span class="n">Mail</span> <span class="n">relay</span>
+        <span class="n">Given</span> <span class="n">I</span> <span class="n">am</span> <span class="n">a</span> <span class="n">production</span> <span class="n">server</span>
+        <span class="n">And</span> <span class="n">I</span> <span class="n">am</span> <span class="n">not</span> <span class="n">a</span> <span class="n">mail</span> <span class="n">server</span> 
+        <span class="n">Then</span> <span class="n">I</span> <span class="n">should</span> <span class="n">have</span> <span class="n">postfix</span> <span class="n">installed</span>
+        <span class="n">And</span> <span class="n">I</span> <span class="n">should</span> <span class="n">have</span> <span class="n">a</span> <span class="n">mail</span> <span class="n">relay</span> <span class="n">to</span> <span class="n">mail</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">org</span>
+<span class="err"> </span>
+    <span class="n">Scenario</span><span class="o">:</span> <span class="n">Mail</span> <span class="n">server</span>
+        <span class="n">Given</span> <span class="n">I</span> <span class="n">am</span> <span class="n">a</span> <span class="n">mail</span> <span class="n">server</span>
+        <span class="n">Then</span> <span class="n">I</span> <span class="n">should</span> <span class="n">have</span> <span class="n">postfix</span> <span class="n">installed</span> 
+        <span class="n">And</span> <span class="n">postfix</span> <span class="n">should</span> <span class="n">be</span> <span class="n">running</span> 
+        <span class="n">And</span> <span class="n">I</span> <span class="n">should</span> <span class="n">be</span> <span class="n">listening</span> <span class="n">on</span> <span class="n">port</span> <span class="mi">25</span>
+</pre></div>
+
+
+<p>Now, the idea is that the scenarios are skipped when the clauses in the
+&lsquo;given&rsquo; part are not met. In this case I have defined two
+scenarios: a mail server and a production server to relay via a mail host. When
+I run this against a host, the given clauses work out which policies to test. I
+needed to teach lettuce to have skippable scenarios. You can find a rough and
+ready implementation of this on <a href="https://github.com/jamescasbon/lettuce/tree/sysadmin">my branch of
+lettuce</a>. Now all that is
+needed is to implement the steps to check those features (which is at the
+bottom of this post). </p>
+<p>The nice part about this is I can write a fair amount of logic in python to
+test the state of the system, but these can be calling out to fabric simple
+shell calls. i.e. I don&rsquo;t need to install python onto to the system I
+wish to test. Changes in policy can be tested site wide by testing a feature
+against all hosts. I can also test the external view of the test machine from
+my box by say, accessing a port or using an http get.</p>
+<p>This is just the sketch of an idea: I need to write a command line tool to
+handle the setup of of fabric hosts, and to allow multiple hosts to be tested
+at once. I would also like to add a fix mode, whereby failing steps could call
+out to the code that corrects a failing policy. Do you think this is a good way
+to test a policy?</p>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">lettuce</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">fabric</span> <span class="kn">import</span> <span class="n">api</span>
+<span class="kn">from</span> <span class="nn">fabric.api</span> <span class="kn">import</span> <span class="n">env</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="err"> </span>
+<span class="n">servers</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;xxx.local&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&#39;ip&#39;</span><span class="p">:</span> <span class="s">&#39; xxxx&#39;</span><span class="p">,</span>
+            <span class="s">&#39;roles&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;production&#39;</span><span class="p">]</span>
+        <span class="p">}</span>
+<span class="p">}</span>
+<span class="err"> </span>
+<span class="c"># world is the lettuce singleton</span>
+<span class="n">world</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">()</span>
+<span class="n">world</span><span class="o">.</span><span class="n">installed</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;postfix&#39;</span><span class="p">:</span> <span class="bp">False</span> <span class="p">}</span>
+<span class="err"> </span>
+<span class="c"># configure fabric to point at localhost</span>
+<span class="c"># and to supress output</span>
+<span class="n">env</span><span class="o">.</span><span class="n">host_string</span> <span class="o">=</span> <span class="s">&#39;localhost&#39;</span>
+<span class="n">env</span><span class="o">.</span><span class="n">warn_only</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="kn">import</span> <span class="nn">fabric.state</span>
+<span class="k">for</span> <span class="n">k</span> <span class="ow">in</span>  <span class="n">fabric</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">:</span>
+    <span class="n">fabric</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">output</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="err"> </span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I am a (\w+) server&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">has_a_role</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">role</span><span class="p">):</span>
+    <span class="n">hostname</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;hostname&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">servers</span><span class="p">[</span><span class="n">hostname</span><span class="p">][</span><span class="s">&#39;roles&#39;</span><span class="p">]</span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I am not a (\w+) server&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">doesnt_have_a_role</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">role</span><span class="p">):</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="n">has_a_role</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">role</span><span class="p">)</span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I should have (\w+) installed&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_installed</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">package</span><span class="p">):</span>
+    <span class="c"># should call out to apt/rpm</span>
+    <span class="k">return</span> <span class="n">world</span><span class="o">.</span><span class="n">installed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">package</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I should have a mail relay to (\w+)&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_mail_relay</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">package</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">api</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;grep foo /etc/passwd&#39;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="p">,</span> <span class="s">&#39;relay not set up&#39;</span>
+<span class="err"> </span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;(\w+) should be running&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_service_running</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">service</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">True</span>
+<span class="err"> </span>
+<span class="nd">@step</span><span class="p">(</span><span class="s">&#39;I should be listening on port (\d+)&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">check_service_running</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">True</span>
+</pre></div>
+
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="http://casbon.me/test-driven-sysadmin-with-lettuce-and-fabric.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
+                        <div class="tags">
+                            <a href="http://casbon.me/tag/python.html">python</a>
+                            <a href="http://casbon.me/tag/devops.html">devops</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
                 <h4 class="date">Jan  9,  2012</h4>
                 <div class="post">
                     <h2 class="title">
@@ -422,10 +533,16 @@ days.  Next time, to number one.</p>
                         <a href="http://casbon.me/html-templating-in-python-using-the-with-stat.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
                         <div class="tags">
                             <a href="http://casbon.me/tag/python.html">python</a>
-                            <a href="http://casbon.me/tag/templates.html" class="selected">templates</a>
+                            <a href="http://casbon.me/tag/templates.html">templates</a>
                         </div>                        
                     </div>
                     <div class="clear"></div>
+                </div>
+
+                <div class="clear"></div>
+                <div class="pages">                
+                    <a href="http://casbon.me/index2.html" class="prev_page">&larr;&nbsp;Previous</a>
+                    <span>Page 3 of 3</span>
                 </div>
 
                 <div class="clear"></div>

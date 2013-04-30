@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 AUTHOR = u'James Casbon'
 SITENAME = u'casbon.me'
+SITESUBTITLE = "James Casbon's Blog"
 SITEURL = ''
 
 

@@ -20,6 +20,6 @@ DELETE_OUTPUT_DIRECTORY = True
 
 # Following items are often useful when publishing
 
-#DISQUS_SITENAME = ""
+DISQUS_SITENAME = "casbonme"
 ARTICLE_URL  = '{slug}' # github can auto redirect links without html
 GOOGLE_ANALYTICS = "UA-27713114-1"

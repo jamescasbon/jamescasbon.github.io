@@ -6,6 +6,9 @@ AUTHOR = u'James Casbon'
 SITENAME = u'casbon.me'
 SITEURL = ''
 
+# ARTICLE_URL  = '{slug}'
+# ARTICLE_SAVE_AS = '{slug}'
+
 TIMEZONE = 'Europe/London'
 
 DEFAULT_LANG = u'en'
@@ -22,12 +25,16 @@ LINKS =  (('Pelican', 'http://getpelican.com/'),
           )
 
 # Social widget
-SOCIAL = (('Follow me on twitter', 'https://twitter.com/casualbon'),
-          ('Fork me on github', 'https://github.com/jamescasbon'),)
+SOCIAL = (('twitter', 'https://twitter.com/casualbon'),
+          ('github', 'https://github.com/jamescasbon'),)
 
-DEFAULT_PAGINATION = False
+DEFAULT_PAGINATION = 3
 
 # Uncomment following line if you want document-relative URLs when developing
 #RELATIVE_URLS = True
 
 THEME = "pelican-mockingbird"
+# THEME = "built-texts"
+
+
+GITHUB_URL = "https://github.com/jamescasbon"

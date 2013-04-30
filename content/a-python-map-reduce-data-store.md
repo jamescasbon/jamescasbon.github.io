@@ -24,6 +24,7 @@ and install it in your database `postgres createlang plpython3u DBNAME`.
 
 Now create our pymap function: 
 
+    :::plpgsql
     CREATE FUNCTION pymap (src text, table_name text)
        RETURNS SETOF json
     AS $$
@@ -37,6 +38,7 @@ Now create our pymap function:
 
 A test table, which is a key value table:
 
+    :::plpgsql
     create table kv (key serial, value json);
     insert into kv (value) values ('{"foo": 100}');
     insert into kv (value) values ('{"foo": 200}');
@@ -45,6 +47,7 @@ A test table, which is a key value table:
 Now we can use our pymap function by passing in a table name and python source
 (which defines a map_fn):
 
+    :::plpgsql
     select pymap('kv;', '
     def map_fn(k, v):
       if "foo" in v:  
@@ -60,6 +63,7 @@ Now we can use our pymap function by passing in a table name and python source
 But this is python, so lets do something more interesting, like use scipy to
 calculate the gamma function...
 
+    :::plpgsql
     select pymap('kv;', '
     def map_fn(k, v):
       import scipy.special
@@ -84,6 +88,7 @@ objects in a database, you'll understand what I mean.  To add an index to these,
 you have to alter your database *and* code to store extra the extra data and then index it.
 With plpython you could generate the index in the database without altering your data storage code:
 
+    :::plpgsql
     CREATE FUNCTION two_of_foo (v json)
       RETURNS integer
     AS $$

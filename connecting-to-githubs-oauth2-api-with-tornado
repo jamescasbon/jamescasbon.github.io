@@ -24,7 +24,7 @@
                 <h4 class="date">Jun  3,  2012</h4>
                 <div class="post">
                     <h2 class="title">
-                        <a href="http://casbon.me/connecting-to-githubs-oauth2-api-with-tornado.html" rel="bookmark" title="Permanent Link to &quot;Connecting to Github's OAuth2 API with Tornado&quot;">Connecting to Github's OAuth2 API with Tornado</a>
+                        <a href="http://casbon.me/connecting-to-githubs-oauth2-api-with-tornado" rel="bookmark" title="Permanent Link to &quot;Connecting to Github's OAuth2 API with Tornado&quot;">Connecting to Github's OAuth2 API with Tornado</a>
                     </h2>
                     
                     <p>Github has a nice OAuth2 API that we can use to manipulate git repos, gists,
@@ -238,7 +238,7 @@ in user:</p>
 
                     <div class="clear"></div>
                     <div class="info">
-                        <a href="http://casbon.me/connecting-to-githubs-oauth2-api-with-tornado.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
+                        <a href="http://casbon.me/connecting-to-githubs-oauth2-api-with-tornado">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="http://casbon.me/category/python.html" rel="tag">Python</a>                        
                         <div class="tags">
                             <a href="http://casbon.me/tag/python.html">python</a>
                             <a href="http://casbon.me/tag/tornado.html">tornado</a>

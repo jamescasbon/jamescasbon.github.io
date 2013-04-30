@@ -1,40 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-        <meta charset="utf-8">
+    <head>
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
         <title>casbon.me</title>
-        <link rel="stylesheet" href="/theme/css/main.css">
+        <link rel="shortcut icon" href="/favicon.ico" />
                 
-        <!--[if IE]>
-            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-        <![endif]-->
-</head>
-
-<body id="index" class="home">
-        <header id="banner" class="body">
-                <h1><a href="/">casbon.me </a></h1>
-                <nav><ul>
-                                                                                    <li ><a href="/category/pvr.html">PVR</a></li>
-                                    <li ><a href="/category/python.html">Python</a></li>
-                                                </ul></nav>
-        </header><!-- /#banner -->
-                
-            
-
-                            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href="/a-python-map-reduce-data-store.html">A Python Map Reduce Data Store</a></h1> 
-                    <footer class="post-info">
-        <abbr class="published" title="2012-12-03T10:20:00">
-                Mon 03 December 2012
-        </abbr>
-
-                <address class="vcard author">
-                By <a class="url fn" href="/author/james-casbon.html">James Casbon</a>
-        </address>
-        <p>In <a href="/category/python.html">Python</a>. </p>
-<p>tags: <a href="/tag/python.html">python</a><a href="/tag/postgresql.html">postgresql</a></p>
-</footer><!-- /.post-info --><p>I'm pleased to announce the release of a data store with python map reduce
+        <link rel="stylesheet" href="/theme/css/screen.css" type="text/css" />
+        <link rel="stylesheet" href="/theme/css/pygments.css" type="text/css" />
+    </head>
+    <body>
+        <div id="header">
+            <ul id="nav">
+                <li class="selected"><a href="">Home</a></li>
+                <li><a href="/archives.html">Archives</a></li>
+            </ul>
+            <div class="header_box">
+                <h1><a href="">casbon.me</a></h1>
+            </div>
+        </div>
+        <div id="wrapper">
+            <div id="content">
+                <h4 class="date">Dec  3,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="/a-python-map-reduce-data-store.html" rel="bookmark" title="Permanent Link to &quot;A Python Map Reduce Data Store&quot;">A Python Map Reduce Data Store</a>
+                    </h2>
+                    
+                    <p>I'm pleased to announce the release of a data store with python map reduce
 capabilities that is also fully ACID compliant, supports SQL as a query
 language, foreign keys and joins.  It is also well supported by numerous
 companies and already available in many hosted environments.  Just kidding: I'm
@@ -122,137 +114,361 @@ With plpython you could generate the index in the database without altering your
     <span class="k">return</span> <span class="n">None</span>
  <span class="err">$$</span> <span class="n">LANGUAGE</span> <span class="n">plpythonu</span> <span class="n">IMMUTABLE</span><span class="p">;</span>
 <span class="n">CREATE</span> <span class="n">INDEX</span> <span class="n">i_two_of_foo</span> <span class="n">ON</span> <span class="nf">kv</span> <span class="p">(</span><span class="n">two_of_foo</span><span class="p">(</span><span class="n">value</span><span class="p">));</span>
-</pre></div>                </article>
-                            </aside><!-- /#featured -->
-                            <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
-                                                
+</pre></div>
 
-                 
-                        <li><article class="hentry">    
-                <header>
-                    <h1><a href="/connecting-to-githubs-oauth2-api-with-tornado.html" rel="bookmark"
-                           title="Permalink to Connecting to Github's OAuth2 API with Tornado">Connecting to Github's OAuth2 API with Tornado</a></h1>
-                </header>
-                
-                <div class="entry-content">
-                <footer class="post-info">
-        <abbr class="published" title="2012-06-03T10:20:00">
-                Sun 03 June 2012
-        </abbr>
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="/a-python-map-reduce-data-store.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">Python</a>                        
+                        <div class="tags">
+                            <a href="/tag/python.html">python</a>
+                            <a href="/tag/postgresql.html">postgresql</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
 
-                <address class="vcard author">
-                By <a class="url fn" href="/author/james-casbon.html">James Casbon</a>
-        </address>
-        <p>In <a href="/category/python.html">Python</a>. </p>
-<p>tags: <a href="/tag/python.html">python</a><a href="/tag/tornado.html">tornado</a></p>
-</footer><!-- /.post-info -->                <p>Short version for index and feeds</p>
-                <a class="readmore" href="/connecting-to-githubs-oauth2-api-with-tornado.html">read more</a>
-                                </div><!-- /.entry-content -->
-            </article></li>
-                            
+                <h4 class="date">Jun  3,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="/connecting-to-githubs-oauth2-api-with-tornado.html" rel="bookmark" title="Permanent Link to &quot;Connecting to Github's OAuth2 API with Tornado&quot;">Connecting to Github's OAuth2 API with Tornado</a>
+                    </h2>
+                    
+                    <p>Github has a nice OAuth2 API that we can use to manipulate git repos, gists,
+etc.  I went through the process of implementing a Tornado based client for the
+API.  This could allow a github backed application.  Note here, we are still
+performing server side operations, so the client is relatively simple.  An
+alternative approach is to do the github interaction in the browser.  If you are
+interested in that, check this library.</p>
+<p>Tornado takes a callback based approach, and we need to code the entire OAuth2
+dance in this way.  There is an base class, tornado.auth.OAuth2Mixin, which can
+perform a very small subset of the protocol.  The steps we need to log in a
+user:</p>
+<ol>
+<li>
+<p>Get an authorization code using authorize_redirect method from the base class.
+This presents the user with a 'do you want to authorize this app dialog in
+github'.  Github then posts back to our app with the code</p>
+</li>
+<li>
+<p>Get a user access token by exchanging the code for an access token.  This is
+done via a simple GET.  This means the user is now logged in.</p>
+</li>
+<li>
+<p>Get the user details by asking the API for the user information</p>
+</li>
+<li>
+<p>Parse the user information and store the relevant details in a session/whatever</p>
+</li>
+</ol>
+<p>Here is a base class that takes care of many of these details.
+get_authenticated_user needs an authorization code, which it uses to get an
+access token.  If it succeeds, it calls _on_access_code, which makes an API
+request to /user.  This is then returned to the callback set by the original
+caller of get_authenticated_user.  It also provides github_request, which makes
+an API call and hands the data to _parse_response which in turn hands it to the
+callback specified by the caller.</p>
+<p>https://gist.github.com/2962341.js?file=github.py</p>
+<p>We can use this, as below, to create handlers to login a user - and in this case
+store the credentials in a secure cookie - or to make an API call for a logged
+in user:</p>
+<p>https://gist.github.com/2962341.js?file=example.py</p>
 
-                 
-                        <li><article class="hentry">    
-                <header>
-                    <h1><a href="/what-will-pypy-do-for-your-website-benchmarki.html" rel="bookmark"
-                           title="Permalink to What will pypy do for your website?">What will pypy do for your website?</a></h1>
-                </header>
-                
-                <div class="entry-content">
-                <footer class="post-info">
-        <abbr class="published" title="2012-02-21T10:20:00">
-                Tue 21 February 2012
-        </abbr>
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="/connecting-to-githubs-oauth2-api-with-tornado.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">Python</a>                        
+                        <div class="tags">
+                            <a href="/tag/python.html">python</a>
+                            <a href="/tag/tornado.html">tornado</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
 
-                <address class="vcard author">
-                By <a class="url fn" href="/author/james-casbon.html">James Casbon</a>
-        </address>
-        <p>In <a href="/category/python.html">Python</a>. </p>
-<p>tags: <a href="/tag/python.html">python</a><a href="/tag/postgresql.html">postgresql</a></p>
-</footer><!-- /.post-info -->                <p>Benchmarking python webservers on pypy and cpython</p>
-                <a class="readmore" href="/what-will-pypy-do-for-your-website-benchmarki.html">read more</a>
-                                </div><!-- /.entry-content -->
-            </article></li>
-                            
+                <h4 class="date">Feb 21,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="/what-will-pypy-do-for-your-website-benchmarki.html" rel="bookmark" title="Permanent Link to &quot;What will pypy do for your website?&quot;">What will pypy do for your website?</a>
+                    </h2>
+                    
+                    <p>There are currently quite a few different ways of developing a web application in python.&nbsp; When you add in how you deploy the application as well, there are even more choices.&nbsp; In terms of application frameworks, you have at least:</p>
 
-                 
-                        <li><article class="hentry">    
-                <header>
-                    <h1><a href="/a-comparison-of-openelectv-yavdr-mythtv-and-a.html" rel="bookmark"
-                           title="Permalink to A Comparison of openelec.tv, yavdr, mythtv and a sony bravia">A Comparison of openelec.tv, yavdr, mythtv and a sony bravia</a></h1>
-                </header>
-                
-                <div class="entry-content">
-                <footer class="post-info">
-        <abbr class="published" title="2012-02-16T10:20:00">
-                Thu 16 February 2012
-        </abbr>
+<ul>
+<li>Django</li>
+<li>twisted.web</li>
+<li>flask</li>
+<li>bottle</li>
+<li>cyclone</li>
+<li>tornado</li>
+<li>pyramid</li>
+</ul>
 
-                <address class="vcard author">
-                By <a class="url fn" href="/author/james-casbon.html">James Casbon</a>
-        </address>
-        <p>In <a href="/category/pvr.html">PVR</a>. </p>
-<p>tags: <a href="/tag/mythtv.html">mythtv</a><a href="/tag/pvr.html">pvr</a></p>
-</footer><!-- /.post-info -->                <p>Short version for index and feeds</p>
-                <a class="readmore" href="/a-comparison-of-openelectv-yavdr-mythtv-and-a.html">read more</a>
-                                </div><!-- /.entry-content -->
-            </article></li>
-                            
+<p>Then these can be run using many different servers, including:</p>
 
-                 
-                        <li><article class="hentry">    
-                <header>
-                    <h1><a href="/html-templating-in-python-using-the-with-stat.html" rel="bookmark"
-                           title="Permalink to HTML Templating in Python using the with statement">HTML Templating in Python using the with statement</a></h1>
-                </header>
-                
-                <div class="entry-content">
-                <footer class="post-info">
-        <abbr class="published" title="2012-01-09T10:20:00">
-                Mon 09 January 2012
-        </abbr>
+<ul>
+<li>tornado</li>
+<li>twisted</li>
+<li>cyclone</li>
+<li>wsgiref</li>
+<li>rocket</li>
+<li>cherrypy</li>
+<li>gunicorn</li>
+<li>fapws</li>
+<li>google app engine</li>
+<li>gevent</li>
+</ul>
 
-                <address class="vcard author">
-                By <a class="url fn" href="/author/james-casbon.html">James Casbon</a>
-        </address>
-        <p>In <a href="/category/python.html">Python</a>. </p>
-<p>tags: <a href="/tag/python.html">python</a><a href="/tag/templates.html">templates</a></p>
-</footer><!-- /.post-info -->                <p>Short version for index and feeds</p>
-                <a class="readmore" href="/html-templating-in-python-using-the-with-stat.html">read more</a>
-                                </div><!-- /.entry-content -->
-            </article></li>
-                            </ol><!-- /#posts-list -->
-                                                    </section><!-- /#content -->
-                    <section id="extras" class="body">
-                        <div class="blogroll">
-                        <h2>blogroll</h2>
-                        <ul>
-                                                    <li><a href="http://getpelican.com/">Pelican</a></li>
-                                                    <li><a href="http://python.org/">Python.org</a></li>
-                                                    <li><a href="http://jinja.pocoo.org/">Jinja2</a></li>
-                                                </ul>
-                </div><!-- /.blogroll -->
-                                <div class="social">
-                        <h2>social</h2>
-                        <ul>
-                            <li><a href="/None" type="application/atom+xml" rel="alternate">atom feed</a></li>
-                            
-                                                    <li><a href="https://twitter.com/casualbon">Follow me on twitter</a></li>
-                                                    <li><a href="https://github.com/jamescasbon">Fork me on github</a></li>
-                                                </ul>
-                </div><!-- /.social -->
-                </section><!-- /#extras -->
+<p>And many more.&nbsp; Typically, these take one of several approaches.&nbsp; Asynchronous either explicit (cyclone, tornado) or via monkey patch and event loop (gevent); threaded such as rocket, or written in C to use an event loop.&nbsp; In addition to this, you now have several different pythons for deployment:</p>
 
-        <footer id="contentinfo" class="body">
-                <address id="about" class="vcard body">
-                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
-                </address><!-- /#about -->
+<ul>
+<li>cpython </li>
+<li>jython</li>
+<li>pypy</li>
+</ul>
 
-                <p>The theme is by <a href="http://coding.smashingmagazine.com/2009/08/04/designing-a-html-5-layout-from-scratch/">Smashing Magazine</a>, thanks!</p>
-        </footer><!-- /#contentinfo -->
+<p>At some point, these servers are generally dealing with asynchronous event loops or using threading.&nbsp; The two approaches to handling this are either to program in a normal style (gevent) or to explicitly use event based programming (eg cyclone).&nbsp; The rise of javascript and node.js has seen event based programming becoming more mainstream.&nbsp; I wanted to find out which of these many combinations would perform best, and in particular what effect using pypy as the interpreter would have on the performance.</p>
 
-</body>
+<p><strong>The benchmark</strong></p>
+
+<p>I created a fairly simple benchmark and implemented it across the different application styles.&nbsp; The benchmark creates one route which renders 'Hello world', a click counter stored by redis that we increase, and finally a static 2,000 character string that we retrieve from redis.&nbsp; I then run ab against the application for 10,000 requests for three replicates at different levels of concurrency (4, 16, 64, 256 connections).&nbsp; We take the stats for the requests per second and also the total request time averages, range and standard deviation.</p>
+
+<p>These were run on a linux box with the kernel 'Linux 2.6.41.4-1.fc15.x86_64 #1 SMP Tue Nov 29 11:53:48 UTC 2011 x86_64 x86_64 x86_64 GNU/Linux' and 24 core 'Intel(R) Xeon(R) CPU&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; X5675&nbsp; @ 3.07GH' (although only one core will be used for python) and 48Gb ram.&nbsp; The pythons used were 'Python 2.7.1' and 'Python 2.7.2, [PyPy 1.8.0 with GCC 4.4.6]'.</p>
+
+<p>You can run the benchmark by checking out <a href="https://github.com/jamescasbon/pypy-web-benchmarks">the repository</a> on github.&nbsp; If you know anything about the application styles, I would encourage you to take a look at the implementations in the servers directory.</p>
+
+<p>The versions used are:</p>
+
+<ul>
+<li>Flask==0.8</li>
+<li>Paste==1.7.5.1</li>
+<li>Rocket==1.2.4</li>
+<li>Twisted==12.0.0</li>
+<li>WebOb==1.2b3</li>
+<li>Werkzeug==0.8.3</li>
+<li>bottle==0.10.9</li>
+<li>bottle-redis==0.1</li>
+<li>cyclone==1.0-rc3</li>
+<li>distribute==0.6.24</li>
+<li>pyramid==1.3a8</li>
+<li>redis==2.4.11</li>
+<li>repoze.lru==0.4</li>
+<li>tornado==2.2</li>
+<li>gevent==1.0dev</li>
+<li>greenlet==0.3.4</li>
+<li>eventlet==0.9.16</li>
+<li>CherryPy==3.2.2</li>
+</ul>
+
+<p>I patched bottle-redis to use a connection queue and bottle to silence the logging when using gevent.&nbsp; Twisted needs C extensions disabled to install on pypy.</p>
+
+<p><strong>Results</strong></p>
+
+<p><em>JIT effect</em></p>
+
+<p>The first thing to notice is that pypy takes a little time to optmize the code.&nbsp; This plot shows the requests per second for each test in iterations 1, 2 and 3.&nbsp; Pypy is on the left (True) and cpython on the right (False).&nbsp; The vertical facet is by the concurrency.<img class="posterous_plugin_object posterous_plugin_object_image" src="http://getfile7.posterous.com/getfile/files.posterous.com/temp-2012-02-23/bmGaFmoDEaBqAGjrHIwctEpfeabsnHEaeutztuqpdHjdJxxiDwDDJnHzcEcz/jit-effect.png.thumb100.png?content_part=aaCDhogwbAdzqCsGmFbq" alt="" width="100" height="100" /></p>
+
+<p>You can clearly see the effect of the JIT. Cpython, on the right, has stable performance across all iterations.&nbsp; Pypy shows a marked improvement from the second iteration.</p>
+
+<p><em>Requests per second</em></p>
+
+<p>We now look at requests per second against concurrency across all combinations of application and server.&nbsp; Each box contains pypy and cpython lines, where available.&nbsp; These are from the third iteration, when the JIT compiler has done its work</p>
+
+<p><img class="posterous_plugin_object posterous_plugin_object_image" src="http://getfile3.posterous.com/getfile/files.posterous.com/temp-2012-02-23/oyJiczHyxdCdJwbgpffzzgbjoGoBizIBtauIJnotAorbFkJqDmDmhCtphBxo/rqs.png.thumb100.png?content_part=xDzhccdximrxsAdxugtb" alt="" width="100" height="100" /></p>
+
+<p>Looking at this, you can see a few things.&nbsp; <span style="text-decoration: line-through;">Twisted and</span> Cherrypy and paste are not really stable under increasing concurrency shown by the lines sloping to the right or incomplete lines (server failed).&nbsp; Gevent, tornado and cyclone are stable under loads and show fairly equivalent performance under cpython.&nbsp; Pypy introduces a 1.5-2x performance increase for almost all servers.</p>
+
+<p>Comparing the microframeworks, flask and bottle, bottle is always faster and really flies under tornado and gevent.&nbsp; Pyramid does the best and serves over 5,000 requests per second with tornado and pypy.&nbsp; Cyclone comes second under pypy with over 3,500 requests per second.&nbsp; However, I found the lack of performance increase over tornado and bottle slightly dissapointing, since cyclone is using an async redis connection.</p>
+
+<p><em>Response time</em></p>
+
+<p>Here we look at the average response time, its standard deviation, and the maximum response time.&nbsp; A very similar picture for all technologies: under increasing concurrency the response times degrade.</p>
+
+<p><img class="posterous_plugin_object posterous_plugin_object_image" src="http://getfile2.posterous.com/getfile/files.posterous.com/temp-2012-02-23/FwsagyymsgqhcnnygqsviuvDnudBClIjHJwdhFyGpczbDADlCBlrblklzllq/time.png.thumb100.png?content_part=hBDrHrchezHukbcegIfg" alt="" width="100" height="100" /></p>
+
+<p>No clear winner between pypy and cpython.</p>
+
+<p><strong>Conclusions</strong></p>
+
+<ul>
+<li>Gevent and tornado have excellent WSGI servers that can serve 1,000s of requests per second. </li>
+<li>Pypy can provide 1.5-2x performance, and this is available with tornado and cyclone but not gevent</li>
+<li>Explicit async code in cyclone did not provide a noticeable increase in performance over tornado, pyramid and bottle</li>
+<li>bottle outperforms flask and really flies with gevent and tornado</li>
+<li>pyramid is really fast with gevent and tornado</li>
+<li>threading approaches don't seem to match the other approaches here </li>
+<li>cherrypy seems to have problems with higher concurrencies</li>
+</ul>
+
+<p>Overall, I think this shows if you are really interested in performance you should take a good look at pypy.&nbsp; I have a lot of respect for the tornado code now, and would seriously consider it for future projects.&nbsp; Bottle is a very good microframework that outperforms flask.</p>
+
+<p><strong>Changes</strong></p>
+
+<p>23/2/12 Add cherrypy, eventlet, created common wsgi server code<strong>.&nbsp; </strong>Couldn't get eventlet to run stable under pypy (socket and RPy errors).<strong><br /></strong></p>
+
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="/what-will-pypy-do-for-your-website-benchmarki.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">Python</a>                        
+                        <div class="tags">
+                            <a href="/tag/python.html">python</a>
+                            <a href="/tag/postgresql.html">postgresql</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
+                <h4 class="date">Feb 16,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="/a-comparison-of-openelectv-yavdr-mythtv-and-a.html" rel="bookmark" title="Permanent Link to &quot;A Comparison of openelec.tv, yavdr, mythtv and a sony bravia&quot;">A Comparison of openelec.tv, yavdr, mythtv and a sony bravia</a>
+                    </h2>
+                    
+                    <p>I recently had all my electronic goods stolen.  One of the pieces that went was
+my <a href="1">MythTV</a> box, a little mini PC that recorded TV and played youtube, etc.
+Fortunately, I was insured so I received a new TV and empty box.  Things have
+changed a lot since I first starting using MythTV over <a href="http://www.mythtv.org/pipermail/mythtv-users/2003-November/019043.html">nine years ago</a> so 
+I thought it would be a good opportunity to try out some of the other
+contenders for homebrew PVRs.  In my list were: </p>
+<ul>
+<li><a href="2">openelec.tv</a>, an extremely minimal XBMC frontend with a TVHeadend backend</li>
+<li><a href="3">yaVDR</a>: an ubuntu based VDR setup with VDR or XBMC frontends</li>
+<li>Sony Bravia TV.  You could plug a HD into the replacement TV I got, it also
+   supported internet video from lovefilm, etc</li>
+</ul>
+<p>I will first run down my experience with each...</p>
+<h2>Sony Bravia TV</h2>
+<p>The TV has the option to use an external HDD to record via USB.  It also
+supports DLNA (more later) and has some internet TV apps (BBC iplayer,
+LoveFilm).  Upon unboxing, I was surprised to receive a copy of the GPL.  It
+seems some Bravias are running Linux.</p>
+<p>The setup with the HDD was pure Sony crap.  The HDD needed to be initialized to work
+with the TV.  This initialization was designed to make the disk unreadable
+anywhere else and to ensure nothing recorded elsewhere could be played back via
+USB (despite the fact it supports DLNA to access network shares).</p>
+<p>Setting up a recording involved navigating to the show in the guide and hitting
+record, or setting a manual timer.  There are no search options or series
+records.  No management of expiry on the disk.  No watching of things being
+broadcast on the same multiplex.  All in all, this resembled an 80's video
+recorder for all the features it had:  basically unusable.</p>
+<p>The internet videos are OK.  Iplayer and lovefilm work well, but the interfaces
+are pretty slow.  There is a scroll effect in iplayer that takes ages.  But the
+interesting thing, for me, is that here we have LoveFilm working on a linux box
+despite the fact that it now requires Silverlight.  The only reasonable
+conclusions are that Sony has a Silverlight implementation on linux or that they
+have negotiated a position to allow non silverlight streaming to their device.
+Vertical market/DRM integration, FTW!  </p>
+<h2>openelec.tv</h2>
+<p>This is a super minimal install of XBMC's pvr branch backed by TVHeadend.
+Installation was easy, boots are super fast.  TVHeadend is configured via its
+web interface and is easy to set up.  After install, the box sits with SAMBA and
+other file sharing set up, so you can copy content straight on or off the box.</p>
+<p>TVHeadend, although easy to set up, is still lacking a lot in terms of the finer
+points of scheduling.  It's duplication detection just doesn't really work
+expecially in terms of channels with many repeats and +1 versions.  If they fix
+these, this will be a killer set up.  But as it was, I just couldn't live with
+it.  It needed too much management to do a series record.</p>
+<p>It also is worth noting that you cannot change anything about the openelec
+install, even the ssh password.  Doing so requires that you recompile the image
+which you might find a pain.  This means you can't use many things that you
+would be used to on a linux install (gcc, perl, python, wget, rsync, etc).
+However, that is what keeps it lightweight and robust.</p>
+<h2>yaVDR</h2>
+<p>yaVDR is a ubuntu setup with VDR installed.  It claims to be minimal, but
+actually installs a whole bunch of crap.  VDR is the other big linux PVR project
+to MythTV, but it has typically helped that you speak German if you want to read
+the documentation.</p>
+<p>The yaVDR install is pretty much the normal ubuntu one, and startup is similar
+to a normal ubuntu box. yaVDR has a custom web front end for configuring yaVDR
+and you can drop into the VDR frontend to control the PVR.  I found that the 
+XBMC-pvr branch they were using was too unreliable to use and
+so I was using the VDR frontend.  This was a little tricky as it is designed
+around a remote (which I didn't have).</p>
+<p>My experience with VDR was almost as frustrating as with TVHeadend.  You can
+have automated recordings, but for channels with +1s and repeats and different
+episodes it never seemed to get things correct.  VDR is based around plugins so
+it may have been that I could have found something to rectify that, but I never
+could get a satisfactory set up.</p>
+<h2>Aside: XBMC-pvr, uPNP, DLNA</h2>
+<p>While I was trying these setups, I was also testing out whether they could
+stream direct to the Bravia TV which supports DLNA.  This is a subset of
+uPNP with certain codecs.  TVHeadend did not support DLNA and neither did VDR.
+However, there was a plugin for VDR that supports uPNP.  However, I could not
+get this to work with streaming DVB broadcasts to the Sony TV.  </p>
+<p>I had higher hopes for XBMC.  It has a reasonable uPNP server, but you soon find
+the problems (including unsorted albums: http://forum.xbmc.org/showthread.php?t=105141) 
+but more troublesome is the fact that the TV shows in XBMC are not served via
+uPNP at all.  </p>
+<h2>Back to Myth</h2>
+<p>After all this, I installed a linux distribution and put Myth on top.  The Myth
+setup was pretty painless (channel scan even worked), but partly this is because 
+I know all the problems too well.</p>
+<p>The worst thing about Myth is that the frontend is pretty awful.  I did try to
+go the XBMC-pvr route, but the integration is very alpha quality.  However, I
+was pleased to find that this didn't matter.  The uPNP server from myth is
+awesome, everything is listed in various categories (date, title, etc) and
+playback is fine.</p>
+<p>Add in MythWeb and I think you have a perfect PVR.  Mythweb is good for
+searching, scheduling and the flash based streaming is great.</p>
+<h2>Conclusions</h2>
+<p>So TL;DR: MythTV is awesome with a DLNA television.  Openelec.tv will be awesome
+when TVHeadend's scheduling is better.</p>
+<p>Also: there's nothing on TV so save your money and buy a book.</p>
+
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="/a-comparison-of-openelectv-yavdr-mythtv-and-a.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="/category/pvr.html" rel="tag">PVR</a>                        
+                        <div class="tags">
+                            <a href="/tag/mythtv.html">mythtv</a>
+                            <a href="/tag/pvr.html">pvr</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
+                <h4 class="date">Jan  9,  2012</h4>
+                <div class="post">
+                    <h2 class="title">
+                        <a href="/html-templating-in-python-using-the-with-stat.html" rel="bookmark" title="Permanent Link to &quot;HTML Templating in Python using the with statement&quot;">HTML Templating in Python using the with statement</a>
+                    </h2>
+                    
+                    <p>A few weeks back, I hacked up a simple templating language using
+python's 'with' statement:</p>
+<p>https://gist.github.com/1585116</p>
+<p>It was inspired by coffeekup and haml, since I find it much easier to
+code html in those DSLs than with raw HTML (presumably, I need a
+better editor to help match tags and indent).  HTML I write these days
+tends to be as minimal as possible, and indent based languages help me
+see the structure much better, which is a product of too long spent
+with python.  See the gist below for the full description.</p>
+<p>I posted this to <a href="https://news.ycombinator.com/item?id=3340369">Hacker
+News</a> and it got into
+the top ten brieflt, with a few nice comments, a few why bothers and a
+lot of prior art.  In particular, jperla's
+<a href="http://www.jperla.com/blog/post/weby-templates-are-easier-faster-and-more-flexible">weby</a>
+was very similar with a more involved syntax.  However, this getting
+to the top ten shows how easy it is to have 15 seconds of fame these
+days.  Next time, to number one.</p>
+<p>Anyway, here is the gist:</p>
+<p>https://gist.github.com/1461441</p>
+
+                    <div class="clear"></div>
+                    <div class="info">
+                        <a href="/html-templating-in-python-using-the-with-stat.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">Python</a>                        
+                        <div class="tags">
+                            <a href="/tag/python.html">python</a>
+                            <a href="/tag/templates.html">templates</a>
+                        </div>                        
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
+                <div class="clear"></div>
+                <div id="footer">
+                    <p>
+                    Mockingbird theme by <a href="http://nevanscott.com/">Nevan Scott</a>
+                    &middot;
+                    <a class="atom" href="/None">Feed</a>
+                </div>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </body>
 </html>

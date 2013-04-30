@@ -39,4 +39,7 @@ THEME = "pelican-mockingbird"
 
 GITHUB_URL = "https://github.com/jamescasbon"
 
-FILES_TO_COPY = (('extra/README.md', 'README.md'), )
+FILES_TO_COPY = (
+    ('extra/README', 'README.md'),
+    ('extra/CNAME', 'CNAME')
+)

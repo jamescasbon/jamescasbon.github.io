@@ -41,57 +41,57 @@ moment...</p>
 <p>First you need to install the plpython package (something like <code>postgresql-plpython-9.2</code>)
 and install it in your database <code>postgres createlang plpython3u DBNAME</code>.</p>
 <p>Now create our pymap function: </p>
-<div class="highlight"><pre><span class="n">CREATE</span> <span class="n">FUNCTION</span> <span class="n">pymap</span> <span class="p">(</span><span class="n">src</span> <span class="n">text</span><span class="p">,</span> <span class="n">table_name</span> <span class="n">text</span><span class="p">)</span>
-   <span class="n">RETURNS</span> <span class="n">SETOF</span> <span class="n">json</span>
-<span class="n">AS</span> <span class="err">$$</span>
-<span class="n">import</span> <span class="n">json</span>
-<span class="n">exec</span> <span class="n">src</span>
-<span class="k">for</span> <span class="n">row</span> <span class="n">in</span> <span class="n">plpy</span><span class="p">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;SELECT key, value FROM %s&quot;</span> <span class="o">%</span> <span class="n">table_name</span><span class="p">)</span><span class="o">:</span>
-    <span class="k">for</span> <span class="n">emission</span> <span class="n">in</span> <span class="n">map_fn</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&quot;key&quot;</span><span class="p">],</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&quot;value&quot;</span><span class="p">]))</span><span class="o">:</span>
-        <span class="n">yield</span> <span class="n">json</span><span class="p">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">emission</span><span class="p">)</span>
+<div class="highlight"><pre><span class="k">CREATE</span> <span class="k">FUNCTION</span> <span class="n">pymap</span> <span class="p">(</span><span class="n">src</span> <span class="nb">text</span><span class="p">,</span> <span class="n">table_name</span> <span class="nb">text</span><span class="p">)</span>
+   <span class="k">RETURNS</span> <span class="k">SETOF</span> <span class="nb">json</span>
+<span class="k">AS</span> <span class="s">$$</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="k">exec</span> <span class="n">src</span>
+<span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">plpy</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s">&quot;SELECT key, value FROM </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">table_name</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">emission</span> <span class="ow">in</span> <span class="n">map_fn</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&quot;key&quot;</span><span class="p">],</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&quot;value&quot;</span><span class="p">])):</span>
+        <span class="k">yield</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">emission</span><span class="p">)</span>
 
-<span class="err">$$</span> <span class="n">LANGUAGE</span> <span class="n">plpythonu</span><span class="p">;</span>
+<span class="s">$$</span> <span class="k">LANGUAGE</span> <span class="n">plpythonu</span><span class="p">;</span>
 </pre></div>
 
 
 <p>A test table, which is a key value table:</p>
-<div class="highlight"><pre><span class="n">create</span> <span class="n">table</span> <span class="nf">kv</span> <span class="p">(</span><span class="n">key</span> <span class="n">serial</span><span class="p">,</span> <span class="n">value</span> <span class="n">json</span><span class="p">);</span>
-<span class="n">insert</span> <span class="n">into</span> <span class="nf">kv</span> <span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="n">values</span> <span class="p">(</span><span class="err">&#39;</span><span class="p">{</span><span class="s">&quot;foo&quot;</span><span class="o">:</span> <span class="mi">100</span><span class="p">}</span><span class="err">&#39;</span><span class="p">);</span>
-<span class="n">insert</span> <span class="n">into</span> <span class="nf">kv</span> <span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="n">values</span> <span class="p">(</span><span class="err">&#39;</span><span class="p">{</span><span class="s">&quot;foo&quot;</span><span class="o">:</span> <span class="mi">200</span><span class="p">}</span><span class="err">&#39;</span><span class="p">);</span>
-<span class="n">insert</span> <span class="n">into</span> <span class="nf">kv</span> <span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="n">values</span> <span class="p">(</span><span class="err">&#39;</span><span class="p">{</span><span class="s">&quot;bar&quot;</span><span class="o">:</span> <span class="mi">300</span><span class="p">}</span><span class="err">&#39;</span><span class="p">);</span>
+<div class="highlight"><pre><span class="k">create</span> <span class="k">table</span> <span class="n">kv</span> <span class="p">(</span><span class="k">key</span> <span class="nb">serial</span><span class="p">,</span> <span class="k">value</span> <span class="nb">json</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">kv</span> <span class="p">(</span><span class="k">value</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="s1">&#39;{&quot;foo&quot;: 100}&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">kv</span> <span class="p">(</span><span class="k">value</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="s1">&#39;{&quot;foo&quot;: 200}&#39;</span><span class="p">);</span>
+<span class="k">insert</span> <span class="k">into</span> <span class="n">kv</span> <span class="p">(</span><span class="k">value</span><span class="p">)</span> <span class="k">values</span> <span class="p">(</span><span class="s1">&#39;{&quot;bar&quot;: 300}&#39;</span><span class="p">);</span>
 </pre></div>
 
 
 <p>Now we can use our pymap function by passing in a table name and python source
 (which defines a map_fn):</p>
-<div class="highlight"><pre><span class="n">select</span> <span class="n">pymap</span><span class="p">(</span><span class="err">&#39;</span><span class="n">kv</span><span class="p">;</span><span class="err">&#39;</span><span class="p">,</span> <span class="err">&#39;</span>
-<span class="n">def</span> <span class="n">map_fn</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span><span class="o">:</span>
-  <span class="k">if</span> <span class="s">&quot;foo&quot;</span> <span class="n">in</span> <span class="n">v</span><span class="o">:</span>  
-    <span class="n">yield</span> <span class="p">{</span><span class="n">k</span><span class="o">:</span> <span class="n">v</span><span class="p">[</span><span class="s">&quot;foo&quot;</span><span class="p">]}</span><span class="err">&#39;</span>
-<span class="err">&#39;&#39;</span><span class="p">);</span>
+<div class="highlight"><pre><span class="k">select</span> <span class="n">pymap</span><span class="p">(</span><span class="s1">&#39;kv;&#39;</span><span class="p">,</span> <span class="s1">&#39;</span>
+<span class="s1">def map_fn(k, v):</span>
+<span class="s1">  if &quot;foo&quot; in v:  </span>
+<span class="s1">    yield {k: v[&quot;foo&quot;]}&#39;</span>
+<span class="s1">&#39;&#39;</span><span class="p">);</span>
 
    <span class="n">pymap</span>    
-<span class="o">------------</span>
- <span class="p">{</span><span class="s">&quot;1&quot;</span><span class="o">:</span> <span class="mi">100</span><span class="p">}</span>
- <span class="p">{</span><span class="s">&quot;2&quot;</span><span class="o">:</span> <span class="mi">200</span><span class="p">}</span>
-<span class="p">(</span><span class="mi">2</span> <span class="n">rows</span><span class="p">)</span>
+<span class="c1">------------</span>
+ <span class="p">{</span><span class="s-Name">&quot;1&quot;</span><span class="p">:</span> <span class="mf">100</span><span class="p">}</span>
+ <span class="p">{</span><span class="s-Name">&quot;2&quot;</span><span class="p">:</span> <span class="mf">200</span><span class="p">}</span>
+<span class="p">(</span><span class="mf">2</span> <span class="k">rows</span><span class="p">)</span>
 </pre></div>
 
 
 <p>But this is python, so lets do something more interesting, like use scipy to
 calculate the gamma function...</p>
-<div class="highlight"><pre><span class="n">select</span> <span class="n">pymap</span><span class="p">(</span><span class="err">&#39;</span><span class="n">kv</span><span class="p">;</span><span class="err">&#39;</span><span class="p">,</span> <span class="err">&#39;</span>
-<span class="n">def</span> <span class="n">map_fn</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span><span class="o">:</span>
-  <span class="n">import</span> <span class="n">scipy</span><span class="p">.</span><span class="n">special</span>
-  <span class="k">if</span> <span class="s">&quot;foo&quot;</span> <span class="n">in</span> <span class="n">v</span><span class="o">:</span>  
-    <span class="n">yield</span> <span class="p">{</span><span class="n">k</span><span class="o">:</span> <span class="n">scipy</span><span class="p">.</span><span class="n">special</span><span class="p">.</span><span class="n">gamma</span><span class="p">(</span><span class="kt">float</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s">&quot;foo&quot;</span><span class="p">])</span><span class="o">/</span><span class="mi">1000</span><span class="p">)}</span><span class="err">&#39;</span>
-<span class="err">&#39;&#39;</span><span class="p">);</span>
+<div class="highlight"><pre><span class="k">select</span> <span class="n">pymap</span><span class="p">(</span><span class="s1">&#39;kv;&#39;</span><span class="p">,</span> <span class="s1">&#39;</span>
+<span class="s1">def map_fn(k, v):</span>
+<span class="s1">  import scipy.special</span>
+<span class="s1">  if &quot;foo&quot; in v:  </span>
+<span class="s1">    yield {k: scipy.special.gamma(float(v[&quot;foo&quot;])/1000)}&#39;</span>
+<span class="s1">&#39;&#39;</span><span class="p">);</span>
 
            <span class="n">pymap</span>           
-<span class="o">---------------------------</span>
- <span class="p">{</span><span class="s">&quot;1&quot;</span><span class="o">:</span> <span class="mf">9.5135076986687324</span><span class="p">}</span>
- <span class="p">{</span><span class="s">&quot;2&quot;</span><span class="o">:</span> <span class="mf">4.5908437119988026</span><span class="p">}</span>
-<span class="p">(</span><span class="mi">2</span> <span class="n">rows</span><span class="p">)</span>
+<span class="c1">---------------------------</span>
+ <span class="p">{</span><span class="s-Name">&quot;1&quot;</span><span class="p">:</span> <span class="mf">9.5135076986687324</span><span class="p">}</span>
+ <span class="p">{</span><span class="s-Name">&quot;2&quot;</span><span class="p">:</span> <span class="mf">4.5908437119988026</span><span class="p">}</span>
+<span class="p">(</span><span class="mf">2</span> <span class="k">rows</span><span class="p">)</span>
 </pre></div>
 
 
@@ -104,17 +104,17 @@ computed values. If you've ever worked on a system that stores serialized
 objects in a database, you'll understand what I mean.  To add an index to these,
 you have to alter your database <em>and</em> code to store extra the extra data and then index it.
 With plpython you could generate the index in the database without altering your data storage code:</p>
-<div class="highlight"><pre><span class="n">CREATE</span> <span class="n">FUNCTION</span> <span class="n">two_of_foo</span> <span class="p">(</span><span class="n">v</span> <span class="n">json</span><span class="p">)</span>
-  <span class="n">RETURNS</span> <span class="n">integer</span>
-<span class="n">AS</span> <span class="err">$$</span>
-  <span class="n">import</span> <span class="n">json</span>
-  <span class="n">obj</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-  <span class="k">if</span> <span class="err">&#39;</span><span class="n">foo</span><span class="err">&#39;</span> <span class="n">in</span> <span class="n">obj</span><span class="o">:</span> 
-    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">obj</span><span class="p">[</span><span class="err">&#39;</span><span class="n">foo</span><span class="err">&#39;</span><span class="p">]</span>
-  <span class="nl">else:</span>
-    <span class="k">return</span> <span class="n">None</span>
- <span class="err">$$</span> <span class="n">LANGUAGE</span> <span class="n">plpythonu</span> <span class="n">IMMUTABLE</span><span class="p">;</span>
-<span class="n">CREATE</span> <span class="n">INDEX</span> <span class="n">i_two_of_foo</span> <span class="n">ON</span> <span class="nf">kv</span> <span class="p">(</span><span class="n">two_of_foo</span><span class="p">(</span><span class="n">value</span><span class="p">));</span>
+<div class="highlight"><pre><span class="k">CREATE</span> <span class="k">FUNCTION</span> <span class="n">two_of_foo</span> <span class="p">(</span><span class="n">v</span> <span class="nb">json</span><span class="p">)</span>
+  <span class="k">RETURNS</span> <span class="nb">integer</span>
+<span class="k">AS</span> <span class="s">$$</span>
+  <span class="kn">import</span> <span class="nn">json</span>
+  <span class="n">obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+  <span class="k">if</span> <span class="s">&#39;foo&#39;</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span> 
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">obj</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="k">return</span> <span class="bp">None</span>
+ <span class="s">$$</span> <span class="k">LANGUAGE</span> <span class="n">plpythonu</span> <span class="k">IMMUTABLE</span><span class="p">;</span>
+<span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">i_two_of_foo</span> <span class="k">ON</span> <span class="n">kv</span> <span class="p">(</span><span class="n">two_of_foo</span><span class="p">(</span><span class="k">value</span><span class="p">));</span>
 </pre></div>
 
                     <div class="clear"></div>
@@ -168,11 +168,180 @@ request to /user.  This is then returned to the callback set by the original
 caller of get_authenticated_user.  It also provides github_request, which makes
 an API call and hands the data to _parse_response which in turn hands it to the
 callback specified by the caller.</p>
-<p>https://gist.github.com/2962341.js?file=github.py</p>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">tornado.ioloop</span>
+<span class="kn">import</span> <span class="nn">tornado.web</span>
+<span class="kn">import</span> <span class="nn">tornado.auth</span>
+<span class="kn">import</span> <span class="nn">tornado.httpclient</span>
+<span class="kn">import</span> <span class="nn">tornado.escape</span>
+<span class="kn">import</span> <span class="nn">tornado.httputil</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<span class="k">class</span> <span class="nc">GithubMixin</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">auth</span><span class="o">.</span><span class="n">OAuth2Mixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Github OAuth Mixin, based on FacebookGraphMixin</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_OAUTH_AUTHORIZE_URL</span> <span class="o">=</span> <span class="s">&#39;https://github.com/login/oauth/authorize&#39;</span>
+    <span class="n">_OAUTH_ACCESS_TOKEN_URL</span> <span class="o">=</span> <span class="s">&#39;https://github.com/login/oauth/access_token&#39;</span>
+    <span class="n">_API_URL</span> <span class="o">=</span> <span class="s">&#39;https://api.github.com&#39;</span>
+
+    <span class="k">def</span> <span class="nf">get_authenticated_user</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">redirect_uri</span><span class="p">,</span> <span class="n">client_id</span><span class="p">,</span> <span class="n">client_secret</span><span class="p">,</span>
+                            <span class="n">code</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">extra_fields</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Handles the login for Github, queries /user and returns a user object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;gau &#39;</span> <span class="o">+</span> <span class="n">redirect_uri</span><span class="p">)</span>
+        <span class="n">http</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpclient</span><span class="o">.</span><span class="n">AsyncHTTPClient</span><span class="p">()</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&quot;redirect_uri&quot;</span><span class="p">:</span> <span class="n">redirect_uri</span><span class="p">,</span>
+        <span class="s">&quot;code&quot;</span><span class="p">:</span> <span class="n">code</span><span class="p">,</span>
+        <span class="s">&quot;client_id&quot;</span><span class="p">:</span> <span class="n">client_id</span><span class="p">,</span>
+        <span class="s">&quot;client_secret&quot;</span><span class="p">:</span> <span class="n">client_secret</span><span class="p">,</span>
+        <span class="p">}</span>
+
+        <span class="n">http</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_oauth_request_token_url</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">async_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_access_token</span><span class="p">,</span> <span class="n">redirect_uri</span><span class="p">,</span> <span class="n">client_id</span><span class="p">,</span>
+                                <span class="n">client_secret</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">fields</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_on_access_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">redirect_uri</span><span class="p">,</span> <span class="n">client_id</span><span class="p">,</span> <span class="n">client_secret</span><span class="p">,</span>
+                        <span class="n">callback</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; callback for authentication url, if successful get the user details &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Github auth error: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">args</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">parse_qs_bytes</span><span class="p">(</span>
+                <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">native_str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="s">&#39;error&#39;</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;oauth error &#39;</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="s">&#39;error&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s">&#39;error&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">session</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&quot;access_token&quot;</span><span class="p">:</span> <span class="n">args</span><span class="p">[</span><span class="s">&quot;access_token&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">github_request</span><span class="p">(</span>
+            <span class="n">method</span><span class="o">=</span><span class="s">&quot;/user&quot;</span><span class="p">,</span>
+            <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">async_callback</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_on_get_user_info</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">session</span><span class="p">),</span>
+            <span class="n">access_token</span><span class="o">=</span><span class="n">session</span><span class="p">[</span><span class="s">&quot;access_token&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_on_get_user_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; callback for github request /user to create a user &quot;&quot;&quot;</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;user data from github &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">callback</span><span class="p">({</span>
+            <span class="s">&quot;login&quot;</span><span class="p">:</span> <span class="n">user</span><span class="p">[</span><span class="s">&quot;login&quot;</span><span class="p">],</span>
+            <span class="s">&quot;name&quot;</span><span class="p">:</span> <span class="n">user</span><span class="p">[</span><span class="s">&quot;name&quot;</span><span class="p">],</span>
+            <span class="s">&quot;email&quot;</span><span class="p">:</span> <span class="n">user</span><span class="p">[</span><span class="s">&quot;email&quot;</span><span class="p">],</span>
+            <span class="s">&quot;access_token&quot;</span><span class="p">:</span> <span class="n">session</span><span class="p">[</span><span class="s">&quot;access_token&quot;</span><span class="p">],</span>
+        <span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">github_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">access_token</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="s">&#39;GET&#39;</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Makes a github API request, hands callback the parsed data &quot;&quot;&quot;</span>
+        <span class="n">args</span><span class="p">[</span><span class="s">&quot;access_token&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">access_token</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httputil</span><span class="o">.</span><span class="n">url_concat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_API_URL</span> <span class="o">+</span> <span class="n">path</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;request to &#39;</span> <span class="o">+</span> <span class="n">url</span><span class="p">)</span>
+        <span class="n">http</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpclient</span><span class="o">.</span><span class="n">AsyncHTTPClient</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">body</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">body</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">json_encode</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;body is&#39;</span> <span class="o">+</span>  <span class="n">body</span><span class="p">)</span>
+        <span class="n">http</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">async_callback</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parse_response</span><span class="p">,</span> <span class="n">callback</span><span class="p">),</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_parse_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Parse the JSON from the API &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;HTTP error from Github: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
+            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">json</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">json_decode</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Invalid JSON from Github: </span><span class="si">%r</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">json</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;error_code&quot;</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Facebook error: </span><span class="si">%d</span><span class="s">: </span><span class="si">%r</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">json</span><span class="p">[</span><span class="s">&quot;error_code&quot;</span><span class="p">],</span>
+                            <span class="n">json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;error_msg&quot;</span><span class="p">))</span>
+            <span class="n">callback</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">callback</span><span class="p">(</span><span class="n">json</span><span class="p">)</span>
+</pre></div>
+
+
 <p>We can use this, as below, to create handlers to login a user - and in this case
 store the credentials in a secure cookie - or to make an API call for a logged
 in user:</p>
-<p>https://gist.github.com/2962341.js?file=example.py</p>
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">tornado.ioloop</span>
+<span class="kn">import</span> <span class="nn">tornado.web</span>
+<span class="kn">import</span> <span class="nn">tornado.escape</span>
+<span class="kn">import</span> <span class="nn">tornado.options</span>
+<span class="kn">import</span> <span class="nn">tornado.httputil</span>
+<span class="kn">import</span> <span class="nn">jinja2</span>
+<span class="kn">import</span> <span class="nn">pyjade.compiler</span>
+<span class="kn">import</span> <span class="nn">coffeescript</span>
+<span class="kn">import</span> <span class="nn">markdown</span>
+
+<span class="kn">import</span> <span class="nn">github</span>
+
+
+<span class="k">class</span> <span class="nc">GithubLoginHandler</span><span class="p">(</span><span class="n">tornado</span><span class="o">.</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">,</span> <span class="n">github</span><span class="o">.</span><span class="n">GithubMixin</span><span class="p">):</span>
+
+    <span class="n">_OAUTH_REDIRECT_URL</span> <span class="o">=</span> <span class="s">&#39;http://localhost:8888/auth/github&#39;</span>
+
+    <span class="nd">@tornado.web.asynchronous</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># we can append next to the redirect uri, so the user gets the</span>
+        <span class="c"># correct URL on login</span>
+        <span class="n">redirect_uri</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httputil</span><span class="o">.</span><span class="n">url_concat</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_OAUTH_REDIRECT_URL</span><span class="p">,</span> <span class="p">{</span><span class="s">&#39;next&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_argument</span><span class="p">(</span><span class="s">&#39;next&#39;</span><span class="p">,</span> <span class="s">&#39;/&#39;</span><span class="p">)})</span>
+
+        <span class="c"># if we have a code, we have been authorized so we can log in</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_argument</span><span class="p">(</span><span class="s">&quot;code&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_authenticated_user</span><span class="p">(</span>
+                <span class="n">redirect_uri</span><span class="o">=</span><span class="n">redirect_uri</span><span class="p">,</span>
+                <span class="n">client_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&quot;github_client_id&quot;</span><span class="p">],</span>
+                <span class="n">client_secret</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&quot;github_secret&quot;</span><span class="p">],</span>
+                <span class="n">code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_argument</span><span class="p">(</span><span class="s">&quot;code&quot;</span><span class="p">),</span>
+                <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">async_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_login</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c"># otherwise we need to request an authorization code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">authorize_redirect</span><span class="p">(</span>
+                <span class="n">redirect_uri</span><span class="o">=</span><span class="n">redirect_uri</span><span class="p">,</span>
+                <span class="n">client_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&quot;github_client_id&quot;</span><span class="p">],</span>
+                <span class="n">extra_params</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;scope&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;github_scope&#39;</span><span class="p">],</span> <span class="s">&quot;foo&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="nf">_on_login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; This handles the user object from the login request &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">user</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;logged in user from github: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_secure_cookie</span><span class="p">(</span><span class="s">&quot;user&quot;</span><span class="p">,</span> <span class="n">tornado</span><span class="o">.</span><span class="n">escape</span><span class="o">.</span><span class="n">json_encode</span><span class="p">(</span><span class="n">user</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clear_cookie</span><span class="p">(</span><span class="s">&quot;user&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redirect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_argument</span><span class="p">(</span><span class="s">&quot;next&quot;</span><span class="p">,</span><span class="s">&quot;/&quot;</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">GistLister</span><span class="p">(</span><span class="n">BaseHandler</span><span class="p">,</span> <span class="n">github</span><span class="o">.</span><span class="n">GithubMixin</span><span class="p">):</span>
+
+    <span class="nd">@tornado.web.authenticated</span>
+    <span class="nd">@tornado.web.asynchronous</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">github_request</span><span class="p">(</span>
+                <span class="s">&#39;/gists&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_on_get_gists</span><span class="p">,</span>
+                <span class="n">access_token</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_user</span><span class="p">[</span><span class="s">&#39;access_token&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_on_get_gists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gists</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s">&#39;gists.jade&#39;</span><span class="p">,</span> <span class="n">gists</span><span class="o">=</span><span class="n">gists</span><span class="p">)</span>
+</pre></div>
 
                     <div class="clear"></div>
                     <div class="info">
@@ -316,41 +485,10 @@ in user:</p>
                     <div class="clear"></div>
                 </div>
 
-                <h4 class="date">Jan  9,  2012</h4>
-                <div class="post">
-                    <h2 class="title">
-                        <a href="/html-templating-in-python-using-the-with-stat.html" rel="bookmark" title="Permanent Link to &quot;HTML Templating in Python using the with statement&quot;">HTML Templating in Python using the with statement</a>
-                    </h2>
-                    
-                    <p>A few weeks back, I hacked up a simple templating language using
-python's 'with' statement:</p>
-<p>https://gist.github.com/1585116</p>
-<p>It was inspired by coffeekup and haml, since I find it much easier to
-code html in those DSLs than with raw HTML (presumably, I need a
-better editor to help match tags and indent).  HTML I write these days
-tends to be as minimal as possible, and indent based languages help me
-see the structure much better, which is a product of too long spent
-with python.  See the gist below for the full description.</p>
-<p>I posted this to <a href="https://news.ycombinator.com/item?id=3340369">Hacker
-News</a> and it got into
-the top ten brieflt, with a few nice comments, a few why bothers and a
-lot of prior art.  In particular, jperla's
-<a href="http://www.jperla.com/blog/post/weby-templates-are-easier-faster-and-more-flexible">weby</a>
-was very similar with a more involved syntax.  However, this getting
-to the top ten shows how easy it is to have 15 seconds of fame these
-days.  Next time, to number one.</p>
-<p>Anyway, here is the gist:</p>
-<p>https://gist.github.com/1461441</p>
-
-                    <div class="clear"></div>
-                    <div class="info">
-                        <a href="/html-templating-in-python-using-the-with-stat.html">posted at 10:20 am</a>&nbsp;&middot;&nbsp;<a href="/category/python.html" rel="tag">Python</a>                        
-                        <div class="tags">
-                            <a href="/tag/python.html">python</a>
-                            <a href="/tag/templates.html">templates</a>
-                        </div>                        
-                    </div>
-                    <div class="clear"></div>
+                <div class="clear"></div>
+                <div class="pages">
+                    <a href="/category/python2.html" class="next_page">Next&nbsp;&rarr;</a>
+                    <span>Page 1 of 2</span>
                 </div>
 
                 <div class="clear"></div>

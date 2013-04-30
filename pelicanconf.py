@@ -6,8 +6,6 @@ AUTHOR = u'James Casbon'
 SITENAME = u'casbon.me'
 SITEURL = ''
 
-# ARTICLE_URL  = '{slug}'
-# ARTICLE_SAVE_AS = '{slug}'
 
 TIMEZONE = 'Europe/London'
 

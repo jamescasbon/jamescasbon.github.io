@@ -101,3 +101,7 @@ With plpython you could generate the index in the database without altering your
      $$ LANGUAGE plpythonu IMMUTABLE;
     CREATE INDEX i_two_of_foo ON kv (two_of_foo(value));
 
+
+
+Update: Anja Skrba kindly translated this page into [Serbo-Croatian](http://science.webhostinggeeks.com/skladistenje-podataka)
+

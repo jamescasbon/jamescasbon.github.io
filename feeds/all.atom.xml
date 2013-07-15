@@ -1,5 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>casbon.me</title><link href="http://casbon.me/" rel="alternate"></link><link href="http://casbon.me/feeds/all.atom.xml" rel="self"></link><id>http://casbon.me/</id><updated>2012-12-03T10:20:00+00:00</updated><entry><title>A Python Map Reduce Data Store</title><link href="http://casbon.me/a-python-map-reduce-data-store" rel="alternate"></link><updated>2012-12-03T10:20:00+00:00</updated><author><name>James Casbon</name></author><id>tag:casbon.me,2012-12-03:a-python-map-reduce-data-store</id><summary type="html">&lt;p&gt;I'm pleased to announce the release of a data store with python map reduce
+<feed xmlns="http://www.w3.org/2005/Atom"><title>casbon.me</title><link href="http://casbon.me/" rel="alternate"></link><link href="http://casbon.me/feeds/all.atom.xml" rel="self"></link><id>http://casbon.me/</id><updated>2013-07-15T12:00:00+01:00</updated><entry><title>PyVCF 0.6.4 Release: Considering the future</title><link href="http://casbon.me/pyvcf-064-release-considering%20the%20future" rel="alternate"></link><updated>2013-07-15T12:00:00+01:00</updated><author><name>James Casbon</name></author><id>tag:casbon.me,2013-07-15:pyvcf-064-release-considering the future</id><summary type="html">&lt;p&gt;I just pushed the PyVCF 0.6.4 release to
+&lt;a href="https://github.com/jamescasbon/PyVCF"&gt;github&lt;/a&gt; and &lt;a href="https://pypi.python.org/pypi/PyVCF/0.6.4"&gt;pypi&lt;/a&gt;.
+It's mainly a bugfix release, but I'm pleased that so many people are
+contributing code and thank everyone for there commits, especially Martijn who
+is normally super fast to respond.&lt;/p&gt;
+&lt;p&gt;I want to take the opportunity to ask users of PyVCF about a few questions about
+the future.  These relate to the future of the project and how the project is
+supported.&lt;/p&gt;
+&lt;p&gt;Firstly, with regard to the project itself.  I think PyVCF has been a relative
+success and I'm happy that I took it over from  jdoughertyii and made it into something
+useful for the community.   However, I'm not currently working day to day with
+sequence data, and so cannot really pay full attention to developments in the
+field.  Nevertheless, I am aware that many power users move away from PyVCF when
+they need to do large scale analysis to something more optimized to a particular
+use.  PyVCF has fit the role of a relatively compliant and liberal parser.  If
+you know your data fits a certain form, you can normally optmize the parser and
+get better performance.  Nevertheless, there are certain improvements we could
+undertake if we wanted a better parser: &lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Optimize the INFO parsing code (which can be the slowest part for small number
+  of sample VCFs)&lt;/li&gt;
+&lt;li&gt;Return numpy arrays for call data, which would flow into downstreamm large
+  scale analysis with less friction&lt;/li&gt;
+&lt;li&gt;Target BCF file formats&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;So I want to know if these are targets users need, or are the power users
+already looking elsewhere?  Is anyone willing to step up and contribute, e.g., a
+cythonized INFO parser.  Is there a better parser that people are switching to
+and I should just give up?&lt;/p&gt;
+&lt;p&gt;Secondly, I want to find out about the best way to help PyVCF users get help.  I
+get quite a few requests for help from people trying to analyze their data or
+who have a small fix to contribute.  I am often pretty derelict at responding as
+these people are sometimes very new to coding.  Github is not the most welcoming
+of place for people at this level.  What would be better: a mailing list?
+Trying to find a project to host (e.g. BioPython)?  A users mailing  list might
+well be too low traffic to really work.&lt;/p&gt;
+&lt;p&gt;If you have any opinions on these matters, please get in touch.  Leave a comment
+here, email me or tweet me.  I'd love to hear from you.&lt;/p&gt;
+&lt;p&gt;Also one final plea:  as I don't get to deal with sequence data these days, I'd
+really like to hear any stories of PyVCF in the wild, if you can share them.  Knowing
+that it is helping people with real biological problems would be a great
+motivator!&lt;/p&gt;</summary><category term="python"></category><category term="biology"></category><category term="VCF"></category></entry><entry><title>A Python Map Reduce Data Store</title><link href="http://casbon.me/a-python-map-reduce-data-store" rel="alternate"></link><updated>2012-12-03T10:20:00+00:00</updated><author><name>James Casbon</name></author><id>tag:casbon.me,2012-12-03:a-python-map-reduce-data-store</id><summary type="html">&lt;p&gt;I'm pleased to announce the release of a data store with python map reduce
 capabilities that is also fully ACID compliant, supports SQL as a query
 language, foreign keys and joins.  It is also well supported by numerous
 companies and already available in many hosted environments.  Just kidding: I'm
